@@ -1,0 +1,90 @@
+﻿using AutoMapper;
+using Dev.Acadmy.LookUp;
+using Dev.Acadmy.Response;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Volo.Abp.Application.Dtos;
+using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Domain.Services;
+using Volo.Abp.Identity;
+using Volo.Abp.Users;
+
+namespace Dev.Acadmy.Chapters
+{
+    public class ChapterManager:DomainService
+    {
+        private readonly IRepository<Chapter> _chapterRepository;
+        private readonly IMapper _mapper;
+        private readonly IIdentityUserRepository _userRepository;
+        private readonly ICurrentUser _currentUser;
+        public ChapterManager(ICurrentUser currentUser, IIdentityUserRepository userRepository, IMapper mapper, IRepository<Chapter> chapterRepository)
+        {
+            _currentUser = currentUser;
+            _userRepository = userRepository;
+            _chapterRepository = chapterRepository;
+            _mapper = mapper;
+        }
+
+        public async Task<ResponseApi<ChapterDto>> GetAsync(Guid id)
+        {
+            var chapter = await _chapterRepository.FirstOrDefaultAsync(x => x.Id == id);
+            if (chapter == null) return new ResponseApi<ChapterDto> { Data = null, Success = false, Message = "Not found chapter" };
+            var dto = _mapper.Map<ChapterDto>(chapter);
+            return new ResponseApi<ChapterDto> { Data = dto, Success = true, Message = "find succeess" };
+        }
+
+        public async Task<PagedResultDto<ChapterDto>> GetListAsync(int pageNumber, int pageSize, string? search)
+        {
+            var roles = await _userRepository.GetRolesAsync(_currentUser.GetId());
+            var queryable = (await _chapterRepository.GetQueryableAsync());
+            if (!string.IsNullOrWhiteSpace(search)) queryable = queryable.Include(x=>x.Course).Where(c => c.Name.Contains(search));
+            var totalCount = await AsyncExecuter.CountAsync(queryable);
+            var chapters = new List<Chapter>();  
+            if (roles.Any(x=>x.Name.ToUpper()==RoleConsts.Admin.ToUpper())) chapters = await AsyncExecuter.ToListAsync(queryable.Include(x => x.Course).OrderByDescending(c => c.CreationTime).Skip((pageNumber - 1) * pageSize).Take(pageSize));
+            else chapters = await AsyncExecuter.ToListAsync(queryable.Include(x => x.Course).Where(c => c.CreatorId == _currentUser.GetId()).OrderByDescending(c => c.CreationTime).Skip((pageNumber - 1) * pageSize).Take(pageSize));
+            var chapterDtos = _mapper.Map<List<ChapterDto>>(chapters);
+            return new PagedResultDto<ChapterDto>(totalCount, chapterDtos);
+        }
+
+        public async Task<ResponseApi<ChapterDto>> CreateAsync(CreateUpdateChapterDto input)
+        {
+            var chapter = _mapper.Map<Chapter>(input);
+            var result = await _chapterRepository.InsertAsync(chapter);
+            var dto = _mapper.Map<ChapterDto>(result);
+            return new ResponseApi<ChapterDto> { Data = dto, Success = true, Message = "save succeess" };
+        }
+
+        public async Task<ResponseApi<ChapterDto>> UpdateAsync(Guid id, CreateUpdateChapterDto input)
+        {
+            var chapterDB = await _chapterRepository.FirstOrDefaultAsync(x => x.Id == id);
+            if (chapterDB == null) return new ResponseApi<ChapterDto> { Data = null, Success = false, Message = "Not found chapter" };
+            var chapter = _mapper.Map(input, chapterDB);
+            var result = await _chapterRepository.UpdateAsync(chapter);
+            var dto = _mapper.Map<ChapterDto>(result);
+            return new ResponseApi<ChapterDto> { Data = dto, Success = true, Message = "update succeess" };
+        }
+
+        public async Task<ResponseApi<bool>> DeleteAsync(Guid id)
+        {
+            var chapter = await _chapterRepository.FirstOrDefaultAsync(x => x.Id == id);
+            if (chapter == null) return new ResponseApi<bool> { Data = false, Success = false, Message = "Not found chapter" };
+            await _chapterRepository.DeleteAsync(chapter);
+            return new ResponseApi<bool> { Data = true, Success = true, Message = "delete succeess" };
+        }
+
+        public async Task<PagedResultDto<LookupDto>> GetListChaptersAsync()
+        {
+            var roles = await _userRepository.GetRolesAsync(_currentUser.GetId());
+            var queryable = await _chapterRepository.GetQueryableAsync();
+            var chapters = new List<Chapter>();
+            if (roles.Any(x => x.Name.ToUpper() == RoleConsts.Admin.ToUpper())) chapters = await AsyncExecuter.ToListAsync(queryable.OrderByDescending(c => c.CreationTime).Take(100));
+            else chapters = await AsyncExecuter.ToListAsync(queryable.Where(c => c.CreatorId == _currentUser.GetId()).OrderByDescending(c => c.CreationTime).Take(100));
+            var chapterDtos = _mapper.Map<List<LookupDto>>(chapters);
+            return new PagedResultDto<LookupDto>(chapterDtos.Count, chapterDtos);
+        }   
+    }
+}
