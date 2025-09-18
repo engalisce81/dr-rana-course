@@ -190,6 +190,8 @@ public class AcadmyHttpApiHostModule : AbpModule
         if (!env.IsDevelopment())
         {
             app.UseErrorPage();
+            app.UseHsts();
+            app.UseHttpsRedirection();
         }
 
         app.UseCorrelationId();
