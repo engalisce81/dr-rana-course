@@ -3,7 +3,6 @@ name: Build and Push ABP Docker Image to Docker Hub
 on:
   push:
     branches: [ main ]
-  workflow_dispatch: # تقدر تشغلها يدوي من Actions في GitHub
 
 jobs:
   build:
@@ -19,10 +18,10 @@ jobs:
         dotnet-version: '9.0.x'
 
     - name: Restore dependencies
-      run: dotnet restore src/Dev.Acadmy.HttpApi.Host/Dev.Acadmy.HttpApi.Host.csproj
+      run: dotnet restore Dev.Acadmy.HttpApi.Host/Dev.Acadmy.HttpApi.Host.csproj
 
     - name: Publish project
-      run: dotnet publish src/Dev.Acadmy.HttpApi.Host/Dev.Acadmy.HttpApi.Host.csproj -c Release -o ./publish
+      run: dotnet publish Dev.Acadmy.HttpApi.Host/Dev.Acadmy.HttpApi.Host.csproj -c Release -o ./publish
 
     - name: Log in to Docker Hub
       uses: docker/login-action@v2
@@ -30,10 +29,7 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v4
-      with:
-        context: .
-        file: src/Dev.Acadmy.HttpApi.Host/Dockerfile
-        push: true
-        tags: engalisce81/dev-acadmy:latest
+    - name: Build and Push Docker image
+      run: |
+        docker build -t engalisce81/dev-acadmy-httpapi:latest -f Dev.Acadmy.HttpApi.Host/Dockerfile .
+        docker push engalisce81/dev-acadmy-httpapi:latest
