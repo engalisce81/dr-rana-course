@@ -29,6 +29,7 @@ using Volo.Abp.Security.Claims;
 using Volo.Abp.Swashbuckle;
 using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.VirtualFileSystem;
+using Volo.Abp.AspNetCore.Mvc.Libs;
 
 namespace Dev.Acadmy;
 
@@ -70,6 +71,10 @@ public class AcadmyHttpApiHostModule : AbpModule
         ConfigureVirtualFileSystem(context);
         ConfigureCors(context, configuration);
         ConfigureSwaggerServices(context, configuration);
+        Configure<AbpMvcLibsOptions>(options =>
+        {
+            options.CheckLibs = false; // ?? ???? ???? ?????
+        });
     }
 
     private void ConfigureAuthentication(ServiceConfigurationContext context)

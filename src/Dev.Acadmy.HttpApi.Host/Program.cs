@@ -27,8 +27,14 @@ public class Program
 
         try
         {
+            var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
+            
             Log.Information("Starting Dev.Acadmy.HttpApi.Host.");
             var builder = WebApplication.CreateBuilder(args);
+            //builder.WebHost.ConfigureKestrel(options =>
+            //{
+            //    options.ListenAnyIP(int.Parse(port));
+            //});
             builder.Host.AddAppSettingsSecretsJson()
                 .UseAutofac()
                 .UseSerilog();
