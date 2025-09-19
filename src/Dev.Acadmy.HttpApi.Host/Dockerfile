@@ -7,9 +7,19 @@ EXPOSE 443
 # استخدم SDK للبناء
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
+
+# نسخ ملف common.props
+COPY common.props ./
+
+# نسخ ملف الـ csproj
 COPY ["src/Dev.Acadmy.HttpApi.Host/Dev.Acadmy.HttpApi.Host.csproj", "Dev.Acadmy.HttpApi.Host/"]
+
+# استعادة الباكجات
 RUN dotnet restore "Dev.Acadmy.HttpApi.Host/Dev.Acadmy.HttpApi.Host.csproj"
+
+# نسخ باقي الملفات
 COPY . .
+
 WORKDIR "/src/Dev.Acadmy.HttpApi.Host"
 RUN dotnet publish "Dev.Acadmy.HttpApi.Host.csproj" -c Release -o /app/publish
 
