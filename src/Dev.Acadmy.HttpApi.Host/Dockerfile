@@ -7,7 +7,7 @@ EXPOSE 443
 # استخدم SDK للبناء
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
-COPY ["Dev.Acadmy.HttpApi.Host/Dev.Acadmy.HttpApi.Host.csproj", "Dev.Acadmy.HttpApi.Host/"]
+COPY ["src/Dev.Acadmy.HttpApi.Host/Dev.Acadmy.HttpApi.Host.csproj", "Dev.Acadmy.HttpApi.Host/"]
 RUN dotnet restore "Dev.Acadmy.HttpApi.Host/Dev.Acadmy.HttpApi.Host.csproj"
 COPY . .
 WORKDIR "/src/Dev.Acadmy.HttpApi.Host"
