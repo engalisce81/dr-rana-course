@@ -72,7 +72,10 @@ public class AcadmyHttpApiHostModule : AbpModule
 
             PreConfigure<OpenIddictServerBuilder>(serverBuilder =>
             {
-                serverBuilder.AddProductionEncryptionAndSigningCertificate("openiddict.pfx", configuration["AuthServer:CertificatePassPhrase"]!);
+                var certPath = Environment.GetEnvironmentVariable("OPENIDDICT_CERT_PATH")!;
+                var certPass = Environment.GetEnvironmentVariable("OPENIDDICT_CERT_PASSWORD")!;
+
+                serverBuilder.AddProductionEncryptionAndSigningCertificate(certPath, certPass);
                 serverBuilder.SetIssuer(new Uri(configuration["AuthServer:Authority"]!));
             });
         }
