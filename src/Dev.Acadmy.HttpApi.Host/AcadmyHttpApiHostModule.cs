@@ -73,7 +73,9 @@ public class AcadmyHttpApiHostModule : AbpModule
             PreConfigure<OpenIddictServerBuilder>(serverBuilder =>
             {
                 serverBuilder.AddProductionEncryptionAndSigningCertificate("openiddict.pfx", configuration["AuthServer:CertificatePassPhrase"]!);
+                serverBuilder.UseAspNetCore().EnableTokenEndpointPassthrough().EnableAuthorizationEndpointPassthrough();
                 serverBuilder.SetIssuer(new Uri(configuration["AuthServer:Authority"]!));
+
             });
         }
     }
@@ -202,22 +204,27 @@ public class AcadmyHttpApiHostModule : AbpModule
     {
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
-
+        
+      
         if (env.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();
         }
-
-        app.UseAbpRequestLocalization();
         app.UseForwardedHeaders(new ForwardedHeadersOptions
         {
             ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
         });
-
+        app.UseAbpRequestLocalization();
+        app.UseForwardedHeaders();
         if (!env.IsDevelopment())
         {
 
             app.UseErrorPage();
+            app.Use((context, next) =>
+            {
+                context.Request.Scheme = "https";
+                return next();
+            });
         }
 
         app.UseCorrelationId();
