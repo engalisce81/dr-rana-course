@@ -32,6 +32,7 @@ using Volo.Abp.VirtualFileSystem;
 using Volo.Abp.AspNetCore.Mvc.Libs;
 using Microsoft.AspNetCore.HttpOverrides;
 using OpenIddict.Server;
+using Volo.Abp.OpenIddict;
 
 namespace Dev.Acadmy;
 
@@ -50,6 +51,9 @@ public class AcadmyHttpApiHostModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
+
+        var configuration = context.Services.GetConfiguration();
+        var environment = context.Services.GetHostingEnvironment();
         PreConfigure<OpenIddictBuilder>(builder =>
         {
             builder.AddValidation(options =>
@@ -59,6 +63,19 @@ public class AcadmyHttpApiHostModule : AbpModule
                 options.UseAspNetCore();
             });
         });
+        if (!environment.IsDevelopment())
+        {
+            PreConfigure<AbpOpenIddictAspNetCoreOptions>(options =>
+            {
+                options.AddDevelopmentEncryptionAndSigningCertificate = false;
+            });
+
+            PreConfigure<OpenIddictServerBuilder>(serverBuilder =>
+            {
+                serverBuilder.AddProductionEncryptionAndSigningCertificate("openiddict.pfx", configuration["AuthServer:CertificatePassPhrase"]!);
+                serverBuilder.SetIssuer(new Uri(configuration["AuthServer:Authority"]!));
+            });
+        }
     }
 
     public override void ConfigureServices(ServiceConfigurationContext context)
@@ -199,6 +216,7 @@ public class AcadmyHttpApiHostModule : AbpModule
 
         if (!env.IsDevelopment())
         {
+
             app.UseErrorPage();
         }
 
