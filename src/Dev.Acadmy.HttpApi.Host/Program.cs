@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -27,18 +28,23 @@ public class Program
 
         try
         {
-            var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
             
             Log.Information("Starting Dev.Acadmy.HttpApi.Host.");
             var builder = WebApplication.CreateBuilder(args);
-            //builder.WebHost.ConfigureKestrel(options =>
-            //{
-            //    options.ListenAnyIP(int.Parse(port));
-            //});
+            var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+            var configuration = builder.Configuration;
             builder.Host.AddAppSettingsSecretsJson()
                 .UseAutofac()
                 .UseSerilog();
+            builder.WebHost.ConfigureKestrel(options =>
+            {
+                options.ListenAnyIP(int.Parse(port), listenOptions =>
+                {
+                    listenOptions.UseHttps("/app/openiddict.pfx", configuration["AuthServer:CertificatePassPhrase"]!);
+                });
+            });
             await builder.AddApplicationAsync<AcadmyHttpApiHostModule>();
+            
             var app = builder.Build();
             await app.InitializeApplicationAsync();
             await app.RunAsync();
