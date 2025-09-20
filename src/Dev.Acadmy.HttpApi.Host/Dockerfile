@@ -23,14 +23,21 @@ WORKDIR /app
 # انسخ ملفات النشر فقط
 COPY --from=build /app/publish .
 
-# انسخ ملف الشهادة داخل الحاوية (تأكد من مكانه في مشروعك)
+# انسخ ملفات الإعدادات الخاصة بالبيئة Production
+COPY src/Dev.Acadmy.HttpApi.Host/appsettings*.json .
+
+# انسخ ملف الشهادة داخل الحاوية
 COPY src/Dev.Acadmy.HttpApi.Host/openiddict.pfx /app/openiddict.pfx
 
-# اضبط متغير البيئة لمسار الشهادة
-ENV OPENIDDICT_CERT_PATH=/app/openiddict.pfx
 
-# اضبط متغير البيئة لكلمة مرور الشهادة
+# اضبط متغيرات البيئة
+ENV OPENIDDICT_CERT_PATH=/app/openiddict.pfx
 ENV OPENIDDICT_CERT_PASSWORD=010203
+ENV ASPNETCORE_ENVIRONMENT=Production
+
+# تأكد من وجود مجلد Logs للـ Serilog
+RUN mkdir -p /app/Logs
 
 # ENTRYPOINT لتشغيل الـ Host
 ENTRYPOINT ["dotnet", "Dev.Acadmy.HttpApi.Host.dll"]
+
