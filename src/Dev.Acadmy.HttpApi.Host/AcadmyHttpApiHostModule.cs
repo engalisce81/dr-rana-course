@@ -72,10 +72,7 @@ public class AcadmyHttpApiHostModule : AbpModule
 
             PreConfigure<OpenIddictServerBuilder>(serverBuilder =>
             {
-                var certPath = Environment.GetEnvironmentVariable("OPENIDDICT_CERT_PATH")!;
-                var certPass = Environment.GetEnvironmentVariable("OPENIDDICT_CERT_PASSWORD")!;
-
-                serverBuilder.AddProductionEncryptionAndSigningCertificate(certPath, certPass);
+                serverBuilder.AddProductionEncryptionAndSigningCertificate("openiddict.pfx", configuration["AuthServer:CertificatePassPhrase"]!);
                 serverBuilder.SetIssuer(new Uri(configuration["AuthServer:Authority"]!));
             });
         }
@@ -127,7 +124,6 @@ public class AcadmyHttpApiHostModule : AbpModule
         {
             options.Applications["MVC"].RootUrl = configuration["App:SelfUrl"];
             options.RedirectAllowedUrls.AddRange(configuration["App:RedirectAllowedUrls"]?.Split(',') ?? Array.Empty<string>());
-
             options.Applications["Angular"].RootUrl = configuration["App:ClientUrl"];
             options.Applications["Angular"].Urls[AccountUrlNames.PasswordReset] = "account/reset-password";
         });
