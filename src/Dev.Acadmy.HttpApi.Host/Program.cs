@@ -38,10 +38,7 @@ public class Program
                 .UseSerilog();
             builder.WebHost.ConfigureKestrel(options =>
             {
-                options.ListenAnyIP(int.Parse(port), listenOptions =>
-                {
-                    listenOptions.UseHttps("/app/openiddict.pfx", configuration["AuthServer:CertificatePassPhrase"]!);
-                });
+                options.ListenAnyIP(int.Parse(port));
             });
             await builder.AddApplicationAsync<AcadmyHttpApiHostModule>();
             
