@@ -4,10 +4,10 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-# انسخ كل الملفات (السوليوشن + المشاريع + props/targets)
+# انسخ كل الملفات (solution + projects)
 COPY . .
 
-# Restore من السوليوشن
+# Restore للسوليوشن
 RUN dotnet restore "Dev.Acadmy.sln"
 
 # Build + Publish لمشروع الـ Host
@@ -20,16 +20,8 @@ RUN dotnet publish "Dev.Acadmy.HttpApi.Host.csproj" -c Release -o /app/publish
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
 WORKDIR /app
 
-# انسخ ملفات النشر
+# انسخ ملفات النشر فقط
 COPY --from=build /app/publish .
 
-# انسخ ملف الشهادة داخل الحاوية (تأكد من مكانه في مشروعك)
-COPY src/Dev.Acadmy.HttpApi.Host/openiddict.pfx /app/openiddict.pfx
-
-# اضبط متغير البيئة لمسار الشهادة
-ENV OPENIDDICT_CERT_PATH=/app/openiddict.pfx
-
-# اضبط متغير البيئة لكلمة مرور الشهادة
-ENV OPENIDDICT_CERT_PASSWORD=010203
-
+# ENTRYPOINT
 ENTRYPOINT ["dotnet", "Dev.Acadmy.HttpApi.Host.dll"]
