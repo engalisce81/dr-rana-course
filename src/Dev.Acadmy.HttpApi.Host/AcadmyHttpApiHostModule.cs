@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -31,6 +31,7 @@ using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.VirtualFileSystem;
 using Volo.Abp.AspNetCore.Mvc.Libs;
 using Microsoft.AspNetCore.HttpOverrides;
+using OpenIddict.Server;
 
 namespace Dev.Acadmy;
 
@@ -64,7 +65,6 @@ public class AcadmyHttpApiHostModule : AbpModule
     {
         var configuration = context.Services.GetConfiguration();
         var hostingEnvironment = context.Services.GetHostingEnvironment();
-
         ConfigureAuthentication(context);
         ConfigureBundles();
         ConfigureUrls(configuration);
@@ -74,7 +74,7 @@ public class AcadmyHttpApiHostModule : AbpModule
         ConfigureSwaggerServices(context, configuration);
         Configure<AbpMvcLibsOptions>(options =>
         {
-            options.CheckLibs = false; // ?? ???? ???? ?????
+            options.CheckLibs = false; // لو عايز تعطل الفحص
         });
     }
 
