@@ -63,22 +63,22 @@ public class AcadmyHttpApiHostModule : AbpModule
                 options.UseAspNetCore();
             });
         });
-        //if (!environment.IsDevelopment())
-        //{
-        //    PreConfigure<AbpOpenIddictAspNetCoreOptions>(options =>
-        //    {
-        //        options.AddDevelopmentEncryptionAndSigningCertificate = false;
-        //    });
+        if (!environment.IsDevelopment())
+        {
+            PreConfigure<AbpOpenIddictAspNetCoreOptions>(options =>
+            {
+                options.AddDevelopmentEncryptionAndSigningCertificate = false;
+            });
 
-        //    PreConfigure<OpenIddictServerBuilder>(serverBuilder =>
-        //    {
-        //        var certPath = Environment.GetEnvironmentVariable("OPENIDDICT_CERT_PATH")!;
-        //        var certPass = Environment.GetEnvironmentVariable("OPENIDDICT_CERT_PASSWORD")!;
+            PreConfigure<OpenIddictServerBuilder>(serverBuilder =>
+            {
+                var certPath = Environment.GetEnvironmentVariable("OPENIDDICT_CERT_PATH")!;
+                var certPass = Environment.GetEnvironmentVariable("OPENIDDICT_CERT_PASSWORD")!;
 
-        //        serverBuilder.AddProductionEncryptionAndSigningCertificate(certPath, certPass);
-        //        serverBuilder.SetIssuer(new Uri(configuration["AuthServer:Authority"]!));
-        //    });
-        //}
+                serverBuilder.AddProductionEncryptionAndSigningCertificate(certPath, certPass);
+                serverBuilder.SetIssuer(new Uri(configuration["AuthServer:Authority"]!));
+            });
+        }
     }
 
     public override void ConfigureServices(ServiceConfigurationContext context)
