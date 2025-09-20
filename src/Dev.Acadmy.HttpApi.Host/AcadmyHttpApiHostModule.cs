@@ -30,6 +30,7 @@ using Volo.Abp.Swashbuckle;
 using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.VirtualFileSystem;
 using Volo.Abp.AspNetCore.Mvc.Libs;
+using Microsoft.AspNetCore.HttpOverrides;
 
 namespace Dev.Acadmy;
 
@@ -191,12 +192,15 @@ public class AcadmyHttpApiHostModule : AbpModule
         }
 
         app.UseAbpRequestLocalization();
+        app.UseForwardedHeaders(new ForwardedHeadersOptions
+        {
+            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+        });
 
         if (!env.IsDevelopment())
         {
             app.UseErrorPage();
             app.UseHsts();
-            app.UseHttpsRedirection();
         }
 
         app.UseCorrelationId();
