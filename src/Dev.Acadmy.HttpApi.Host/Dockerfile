@@ -27,7 +27,8 @@ COPY --from=build /app/publish .
 COPY src/Dev.Acadmy.HttpApi.Host/appsettings*.json .
 
 # انسخ ملف الشهادة داخل الحاوية
-COPY src/Dev.Acadmy.HttpApi.Host/openiddict.pfx
+COPY src/Dev.Acadmy.HttpApi.Host/openiddict.pfx /app/openiddict.pfx
+
 
 # اضبط متغيرات البيئة
 ENV OPENIDDICT_CERT_PATH=/app/openiddict.pfx
