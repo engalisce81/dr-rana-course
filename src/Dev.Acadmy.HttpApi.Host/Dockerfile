@@ -26,8 +26,10 @@ COPY --from=build /app/publish .
 # انسخ ملف الشهادة داخل الحاوية (تأكد من مكانه في مشروعك)
 COPY src/Dev.Acadmy.HttpApi.Host/openiddict.pfx /app/openiddict.pfx
 
-# اضبط متغير البيئة لمسار الشهادة وكلمة المرور
+# اضبط متغير البيئة لمسار الشهادة
 ENV OPENIDDICT_CERT_PATH=/app/openiddict.pfx
-ENV OPENIDDICT_CERT_PASSWORD=010203  # غيرها لكلمة المرور الفعلية
+
+# اضبط متغير البيئة لكلمة مرور الشهادة
+ENV OPENIDDICT_CERT_PASSWORD=010203
 
 ENTRYPOINT ["dotnet", "Dev.Acadmy.HttpApi.Host.dll"]
