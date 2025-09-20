@@ -4,7 +4,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-# انسخ كل الملفات (solution + projects)
+# انسخ كل الملفات (solution + projects + props/targets)
 COPY . .
 
 # Restore للسوليوشن
@@ -23,5 +23,14 @@ WORKDIR /app
 # انسخ ملفات النشر فقط
 COPY --from=build /app/publish .
 
-# ENTRYPOINT
+# انسخ ملف الشهادة داخل الحاوية (تأكد من مكانه في مشروعك)
+COPY src/Dev.Acadmy.HttpApi.Host/openiddict.pfx /app/openiddict.pfx
+
+# اضبط متغير البيئة لمسار الشهادة
+ENV OPENIDDICT_CERT_PATH=/app/openiddict.pfx
+
+# اضبط متغير البيئة لكلمة مرور الشهادة
+ENV OPENIDDICT_CERT_PASSWORD=010203
+
+# ENTRYPOINT لتشغيل الـ Host
 ENTRYPOINT ["dotnet", "Dev.Acadmy.HttpApi.Host.dll"]
