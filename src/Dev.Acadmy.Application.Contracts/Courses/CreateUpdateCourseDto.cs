@@ -1,9 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace Dev.Acadmy.Courses
 {
     public class CreateUpdateCourseDto
@@ -17,5 +12,6 @@ namespace Dev.Acadmy.Courses
         public bool IsActive { get; set; } = true; // enabled/disabled
         public bool IsLifetime { get; set; } = false;
         public int? DurationInDays { get; set; } // null if lifetime
+        public Guid? SubjectId { get; set; }
     }
 }

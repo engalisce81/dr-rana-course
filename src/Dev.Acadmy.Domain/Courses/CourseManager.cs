@@ -115,57 +115,26 @@ namespace Dev.Acadmy.Courses
             return new PagedResultDto<LookupDto>(totalCount, courseDtos);
         }
 
-        public async Task<PagedResultDto<CourseInfoHomeDto>> GetCoursesInfoListAsync(int pageNumber,int pageSize,string? search,bool alreadyJoin,Guid? subjectId)
+        public async Task<PagedResultDto<CourseInfoHomeDto>> GetCoursesInfoListAsync(int pageNumber,int pageSize,string? search,bool alreadyJoin,Guid userId,Guid? subjectId)
         {
-            var queryable = await _courseRepository.GetQueryableAsync();
             var currentUser = await _userRepository.GetAsync(_currentUser.GetId());
             var collegeId = currentUser.GetProperty<Guid?>(SetPropConsts.CollegeId);
-            if (collegeId == null || collegeId == Guid.Empty)
-                return new PagedResultDto<CourseInfoHomeDto>(0, new List<CourseInfoHomeDto>());
-
-            // الكورسات اللي الطالب مشترك فيها
-            var studentCourses = await (await _courseStudentRepository.GetQueryableAsync())
-                .Where(x => x.UserId == currentUser.Id && x.IsSubscibe)
-                .Select(x => x.CourseId)
-                .ToListAsync();
-
-            // فلترة بالبحث
-            if (!string.IsNullOrWhiteSpace(search))
-                queryable = queryable.Where(c => c.Name.Contains(search) || c.Description.Contains(search));
-
-            // فلترة بالمادة
-            if (subjectId.HasValue)
-                queryable = queryable.Where(c => c.SubjectId == subjectId.Value);
-
-            // فلترة بالكلية
+            if (collegeId == null || collegeId == Guid.Empty) return new PagedResultDto<CourseInfoHomeDto>(0, new List<CourseInfoHomeDto>());
+            var courseStudents = await (await _courseStudentRepository.GetQueryableAsync()).Where(x => x.UserId == currentUser.Id).ToListAsync();
+            var alreadyJoinCourses = courseStudents.Where(x => x.IsSubscibe).Select(x => x.CourseId).ToList();
+            var alreadyRequestCourses = courseStudents.Select(x => x.CourseId).ToList();
+            var queryable = await _courseRepository.GetQueryableAsync();
+            if (!string.IsNullOrWhiteSpace(search)) queryable = queryable.Where(c =>c.Name.Contains(search) || c.Description.Contains(search));
+            if (subjectId.HasValue)  queryable = queryable.Where(c => c.SubjectId == subjectId.Value);
             queryable = queryable.Where(c => c.CollegeId == collegeId.Value);
-
-            // لو عايز المنضم ليهم بس
-            if (alreadyJoin)
-                queryable = queryable.Where(c => studentCourses.Contains(c.Id));
-
-            // إجمالي النتائج بعد الفلاتر
+            if (alreadyJoin)  queryable = queryable.Where(c => alreadyJoinCourses.Contains(c.Id));
             var totalCount = await queryable.CountAsync();
-
-            // جلب البيانات
-            var courses = await queryable
-                .Include(c => c.User)
-                .Include(c => c.College)
-                .Include(c => c.Chapters)
-                .OrderByDescending(c => c.CreationTime)
+            var courses = await queryable.Include(c => c.User).Include(x=>x.Subject).Include(c => c.College).Include(c => c.Chapters).OrderByDescending(c => c.CreationTime)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
-            // جلب الميديا (تقدر بعدين تعمل bulk بدل واحد واحد)
-            var mediaItems = new Dictionary<Guid, MediaItem>();
-            foreach (var course in courses)
-            {
-                var media = await _mediaItemManager.GetAsync(course.Id);
-                if (media != null)
-                    mediaItems[course.Id] = media;
-            }
-
+            var mediaItems = new Dictionary<Guid, MediaItem>(); foreach (var course in courses) { var media = await _mediaItemManager.GetAsync(course.Id); if (media != null) mediaItems[course.Id] = media; }
             var courseDtos = courses.Select(course => new CourseInfoHomeDto
             {
                 Id = course.Id,
@@ -177,13 +146,16 @@ namespace Dev.Acadmy.Courses
                 UserName = course.User?.Name ?? "",
                 CollegeId = course.CollegeId,
                 CollegeName = course.College?.Name ?? "",
-                AlreadyJoin = studentCourses.Contains(course.Id),
+                AlreadyJoin = alreadyJoinCourses.Contains(course.Id),
+                AlreadyRequest = alreadyRequestCourses.Contains(course.Id),
+                SubjectId = course.Subject?.Id,
+                SubjectName = course.Subject?.Name?? "",
                 ChapterCount = course.Chapters.Count,
-                DurationInWeeks = (course.DurationInDays/7)
+                DurationInWeeks = course.DurationInDays / 7
             }).ToList();
-
             return new PagedResultDto<CourseInfoHomeDto>(totalCount, courseDtos);
         }
+
 
     }
 }

@@ -54,6 +54,13 @@ public class AcadmyHttpApiHostModule : AbpModule
 
         var configuration = context.Services.GetConfiguration();
         var environment = context.Services.GetHostingEnvironment();
+        PreConfigure<OpenIddictServerBuilder>(builder =>
+        {
+            builder.SetAuthorizationCodeLifetime(TimeSpan.FromMinutes(30));
+            builder.SetAccessTokenLifetime(TimeSpan.FromDays(14));
+            builder.SetIdentityTokenLifetime(TimeSpan.FromMinutes(30));
+            builder.SetRefreshTokenLifetime(TimeSpan.FromDays(14));
+        });
         PreConfigure<OpenIddictBuilder>(builder =>
         {
             builder.AddValidation(options =>

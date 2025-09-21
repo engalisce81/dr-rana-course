@@ -72,6 +72,7 @@ public class AcadmyApplicationAutoMapperProfile : Profile
         CreateMap<LookupDto, College>();
         CreateMap<LookupDto, Courses.Course>();
         CreateMap<LookupDto, Chapter>();
+        CreateMap<LookupDto, Subject>();
 
         CreateMap<QuestionBank, LookupDto>().ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name));
         CreateMap<QuestionType, LookupDto>().ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name));
@@ -80,5 +81,7 @@ public class AcadmyApplicationAutoMapperProfile : Profile
         CreateMap<College, LookupDto>();
         CreateMap<Courses.Course, LookupDto>();
         CreateMap<Chapter, LookupDto>();
+        CreateMap< Subject ,LookupDto>();
+
     }
 }

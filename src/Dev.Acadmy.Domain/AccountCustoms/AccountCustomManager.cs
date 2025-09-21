@@ -49,11 +49,7 @@ namespace Dev.Acadmy.AccountCustoms
             user.Name = input.FullName;
             user.SetProperty(SetPropConsts.CollegeId, input.CollegeId);
             user.SetProperty(SetPropConsts.Gender,input.Gender);
-            if(accountType.Key == (int)AccountTypeKey.Teacher)
-            {
-                var subject = await _subjectRepository.GetAsync(x => x.Id == input.SubjectId);
-                user.SetProperty(SetPropConsts.SubjectId, input.SubjectId);
-            }
+            if (accountType.Key == (int)AccountTypeKey.Student)  user.SetProperty(SetPropConsts.StudentMobileIP, input.StudentMobileIP);
             user.SetIsActive(true);
             var result = await _userManager.CreateAsync(user, input.Password);
             if (result.Succeeded)
