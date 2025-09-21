@@ -11,14 +11,17 @@ using Volo.Abp.Domain.Services;
 using Microsoft.EntityFrameworkCore;
 using Dev.Acadmy.Response;
 using Dev.Acadmy.LookUp;
+using Volo.Abp.Users;
 namespace Dev.Acadmy.Colleges
 {
     public class CollegeManager :DomainService
     {
         private readonly IRepository<College ,Guid> _collegeRepository;
         private readonly IMapper _mapper;
-        public CollegeManager(IMapper mapper, IRepository<College,Guid> collegeRepository) 
+        private readonly ICurrentUser _currentUser;
+        public CollegeManager(ICurrentUser currentUser, IMapper mapper, IRepository<College,Guid> collegeRepository) 
         {
+            _currentUser = currentUser;
             _collegeRepository = collegeRepository;
             _mapper = mapper;
         }

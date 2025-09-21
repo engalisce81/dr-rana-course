@@ -15,6 +15,7 @@ using Dev.Acadmy.MediaItems;
 using Dev.Acadmy.Questions;
 using Dev.Acadmy.Response;
 using Dev.Acadmy.LookUp;
+using Volo.Abp;
 
 namespace Dev.Acadmy.Courses
 {
@@ -156,6 +157,37 @@ namespace Dev.Acadmy.Courses
             return new PagedResultDto<CourseInfoHomeDto>(totalCount, courseDtos);
         }
 
+        public async Task<ResponseApi<CourseInfoHomeDto>> GetCoursesInfoAsync( Guid courseId)
+        {
+            var currentUser = await  _userRepository.GetAsync(_currentUser.GetId());
+            var courseStudents = await (await _courseStudentRepository.GetQueryableAsync()).Where(x => x.UserId == currentUser.Id).ToListAsync();
+            var alreadyJoinCourses = courseStudents.Where(x => x.IsSubscibe && x.UserId == currentUser.Id).Select(x => x.CourseId).ToList();
+            var alreadyRequestCourses = courseStudents.Select(x => x.CourseId).ToList();
+            var queryable = await _courseRepository.GetQueryableAsync();
+            var course = await queryable.Include(c => c.User).Include(x => x.Subject).Include(x=>x.CourseInfos).Include(c => c.College).Include(c => c.Chapters).OrderByDescending(c => c.CreationTime).FirstOrDefaultAsync(x=>x.Id==courseId);
+            if (course == null) { throw new UserFriendlyException("Course Not Found"); }
+            var media = await _mediaItemManager.GetAsync(courseId); 
+            var courseDto =  new CourseInfoHomeDto
+            {
+                Id = course.Id,
+                Name = course.Name,
+                Description = course.Description,
+                Price = course.Price,
+                LogoUrl = media?.Url?? "",
+                UserId = course.UserId,
+                UserName = course.User?.Name ?? "",
+                CollegeId = course.CollegeId,
+                CollegeName = course.College?.Name ?? "",
+                AlreadyJoin = alreadyJoinCourses.Contains(course.Id),
+                AlreadyRequest = alreadyRequestCourses.Contains(course.Id),
+                SubjectId = course.Subject?.Id,
+                SubjectName = course.Subject?.Name ?? "",
+                ChapterCount = course.Chapters.Count,
+                DurationInWeeks = course.DurationInDays / 7,
+                Infos = course.CourseInfos.Select(x=>x.Name).ToList()
+            };
+            return new ResponseApi<CourseInfoHomeDto>() { Data= courseDto ,Success=true , Message="Find Course Success"};
+        }
 
     }
 }

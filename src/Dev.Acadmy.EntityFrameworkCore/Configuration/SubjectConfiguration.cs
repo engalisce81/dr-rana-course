@@ -21,6 +21,7 @@ namespace Dev.Acadmy.Configuration
                    .IsRequired()
                    .HasMaxLength(200);
             builder.HasMany(x=>x.Courses).WithOne(x=>x.Subject).HasForeignKey(x=>x.SubjectId);
+            builder.HasOne(x => x.College).WithMany(x => x.Subjects).HasForeignKey(x => x.CollegeId);
 
         }
     }

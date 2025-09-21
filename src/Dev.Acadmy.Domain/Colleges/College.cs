@@ -1,4 +1,5 @@
 ﻿using Dev.Acadmy.Courses;
+using Dev.Acadmy.Subjects;
 using System;
 using System.Collections.Generic;
 
@@ -10,5 +11,6 @@ namespace Dev.Acadmy.Colleges
     {
         public string Name { get; set; }
         public ICollection <Courses.Course> Courses { get; set; }   = new List<Courses.Course>();
+        public ICollection<Subject> Subjects { get; set; } = new List<Subject>();
     }
 }

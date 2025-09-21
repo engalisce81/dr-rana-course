@@ -9,5 +9,6 @@ namespace Dev.Acadmy.Courses
     public class CreateUpdateCourseInfoDto
     {
         public string Name { get; set; }
+        public Guid CourseId { get; set; }
     }
 }

@@ -10,5 +10,8 @@ namespace Dev.Acadmy.Colleges
     public class CollegeDto :EntityDto<Guid>
     {
         public string Name { get; set; }
+        public Guid? CollegeId { get; set; }
+        public string? CollegeName { get; set; }
+
     }
 }

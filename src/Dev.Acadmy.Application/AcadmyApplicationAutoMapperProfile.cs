@@ -65,6 +65,9 @@ public class AcadmyApplicationAutoMapperProfile : Profile
         CreateMap<Subject, SubjectDto>();
         CreateMap<CreateUpdateSubjectDto, Subject>();
 
+        CreateMap<CourseInfo, CourseInfoDto>();
+        CreateMap<CreateUpdateCourseInfoDto, CourseInfo>();
+
         CreateMap<LookupDto, QuestionBank>().ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name)); ;
         CreateMap<LookupDto, QuestionType>().ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name));
         CreateMap<LookupDto, Quiz>().ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Name));
@@ -82,6 +85,5 @@ public class AcadmyApplicationAutoMapperProfile : Profile
         CreateMap<Courses.Course, LookupDto>();
         CreateMap<Chapter, LookupDto>();
         CreateMap< Subject ,LookupDto>();
-
     }
 }

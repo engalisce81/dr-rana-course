@@ -24,6 +24,7 @@ namespace Dev.Acadmy.Courses
         public bool AlreadyRequest { get; set; }
         public int ChapterCount { get; set; }
         public int? DurationInWeeks { get; set; } // null if lifetime
+        public ICollection<string> Infos { get;set;} = new List<string>();
 
 
     }

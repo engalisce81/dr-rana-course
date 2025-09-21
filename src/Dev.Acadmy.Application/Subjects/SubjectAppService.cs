@@ -30,7 +30,7 @@ namespace Dev.Acadmy.Subjects
         public async Task<ResponseApi<SubjectDto>> UpdateAsync(Guid id, CreateUpdateSubjectDto input) => await _subjectManager.UpdateAsync(id, input);
         [Authorize(AcadmyPermissions.Subjects.Delete)]
         public async Task DeleteAsync(Guid id) => await _subjectManager.DeleteAsync(id);
-        [AllowAnonymous]
+        [Authorize]
         public async Task<PagedResultDto<LookupDto>> GetSubjectsListAsync() => await _subjectManager.GetSubjectsListAsync();
     }
 }

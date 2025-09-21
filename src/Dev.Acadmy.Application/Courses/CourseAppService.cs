@@ -30,5 +30,7 @@ namespace Dev.Acadmy.Courses
         public async Task<PagedResultDto<LookupDto>> GetCoursesListAsync() => await _courseManager.GetCoursesListAsync();
         [Authorize]
         public async Task<PagedResultDto<CourseInfoHomeDto>> GetCoursesInfoListAsync(int pageNumber, int pageSize, string? search ,bool alreadyJoin,Guid userId, Guid? subjectId) => await _courseManager.GetCoursesInfoListAsync(pageNumber, pageSize, search,alreadyJoin,userId, subjectId);
+        [Authorize]
+        public async Task<ResponseApi<CourseInfoHomeDto>> GetCoursesInfoAsync(Guid courseId) => await _courseManager.GetCoursesInfoAsync(courseId);
     }
 }

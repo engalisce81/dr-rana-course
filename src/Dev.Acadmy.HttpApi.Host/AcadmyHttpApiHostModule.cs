@@ -33,6 +33,7 @@ using Volo.Abp.AspNetCore.Mvc.Libs;
 using Microsoft.AspNetCore.HttpOverrides;
 using OpenIddict.Server;
 using Volo.Abp.OpenIddict;
+using Microsoft.Extensions.FileProviders;
 
 namespace Dev.Acadmy;
 
@@ -215,8 +216,18 @@ public class AcadmyHttpApiHostModule : AbpModule
     {
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
-        
-      
+        app.UseStaticFiles();
+
+        var imagesRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
+        if (!Directory.Exists(imagesRootPath))
+        {
+            Directory.CreateDirectory(imagesRootPath);
+        }
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = new PhysicalFileProvider(imagesRootPath),
+            RequestPath = "/images"
+        });
         if (env.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();
@@ -225,12 +236,12 @@ public class AcadmyHttpApiHostModule : AbpModule
         app.UseAbpRequestLocalization();
         if (!env.IsDevelopment())
         {
+            app.UseDeveloperExceptionPage();
             app.UseForwardedHeaders(new ForwardedHeadersOptions
             {
                 ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
             });
             app.UseForwardedHeaders();
-            app.UseErrorPage();
             app.Use((context, next) =>
             {
                 context.Request.Scheme = "https";

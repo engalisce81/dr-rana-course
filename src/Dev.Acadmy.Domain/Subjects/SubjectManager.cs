@@ -14,15 +14,24 @@ using Volo.Abp.Identity;
 using Volo.Abp.Users;
 using Dev.Acadmy.Subjects;
 using Dev.Acadmy.LookUp;
+using Dev.Acadmy.Colleges;
+using Volo.Abp.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace Dev.Acadmy.Subjects
 {
     public class SubjectManager : DomainService
     {
-        private readonly IRepository<Subject> _subjectRepository;
+        private readonly IRepository<Subject ,Guid> _subjectRepository;
         private readonly IMapper _mapper;
-        public SubjectManager(IMapper mapper, IRepository<Subject> subjectRepository)
+        private readonly ICurrentUser _currentUser;
+        private readonly IRepository<College, Guid> _collegeRepository;
+        private readonly IIdentityUserRepository _userRepository;
+        public SubjectManager(IIdentityUserRepository userRepository, IRepository<College, Guid> collegeRepository, ICurrentUser currentUser, IMapper mapper, IRepository<Subject , Guid> subjectRepository)
         {
+            _userRepository = userRepository;
+            _collegeRepository = collegeRepository;
+            _currentUser = currentUser;
             _subjectRepository = subjectRepository;
             _mapper = mapper;
         }
@@ -73,11 +82,12 @@ namespace Dev.Acadmy.Subjects
 
         public async Task<PagedResultDto<LookupDto>> GetSubjectsListAsync()
         {
-            var queryable = await _subjectRepository.GetQueryableAsync();
-            var totalCount = await AsyncExecuter.CountAsync(queryable);
-            var subjects = await AsyncExecuter.ToListAsync(queryable.OrderByDescending(c => c.CreationTime));
+            var currentUser = await _userRepository.GetAsync(_currentUser.GetId());
+            var collegeId = currentUser.GetProperty<Guid?>(SetPropConsts.CollegeId);
+            if(collegeId == null) { }
+            var subjects =await (await _collegeRepository.GetQueryableAsync()).Include(x=>x.Subjects).Select(x=>x.Subjects).ToListAsync();
             var subjectDtos = _mapper.Map<List<LookupDto>>(subjects);
-            return new PagedResultDto<LookupDto>(totalCount, subjectDtos);
+            return new PagedResultDto<LookupDto>(subjectDtos.Count, subjectDtos);
         }
     }
 }
