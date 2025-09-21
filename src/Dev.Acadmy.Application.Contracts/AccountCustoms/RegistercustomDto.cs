@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Dev.Acadmy.AccountCustoms
 {
@@ -13,7 +9,8 @@ namespace Dev.Acadmy.AccountCustoms
         public string Password { get; set; }
         public bool Gender { get; set; }
         public Guid CollegeId { get; set; }
-        public Guid AccountTypeId { get; set; }
-     
+        public Guid? SubjectId { get; set; }
+        public int AccountTypeKey { get; set; }
+        public string? StudentMobileIP { get; set; }
     }
 }

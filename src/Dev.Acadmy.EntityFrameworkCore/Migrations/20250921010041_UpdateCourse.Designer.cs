@@ -3,6 +3,7 @@ using System;
 using Dev.Acadmy.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Volo.Abp.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Dev.Acadmy.Migrations
 {
     [DbContext(typeof(AcadmyDbContext))]
-    partial class AcadmyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250921010041_UpdateCourse")]
+    partial class UpdateCourse
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -243,55 +246,7 @@ namespace Dev.Acadmy.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("AppCoursesProgres", (string)null);
-                });
-
-            modelBuilder.Entity("Dev.Acadmy.Courses.CourseInfo", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<Guid>("CourseId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<string>("ExtraProperties")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CourseId");
-
-                    b.ToTable("AppCourseInfosProgres", (string)null);
+                    b.ToTable("AppCoursesApp", (string)null);
                 });
 
             modelBuilder.Entity("Dev.Acadmy.Courses.CourseStudent", b =>
@@ -2605,17 +2560,6 @@ namespace Dev.Acadmy.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Dev.Acadmy.Courses.CourseInfo", b =>
-                {
-                    b.HasOne("Dev.Acadmy.Courses.Course", "Course")
-                        .WithMany("CourseInfos")
-                        .HasForeignKey("CourseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Course");
-                });
-
             modelBuilder.Entity("Dev.Acadmy.Courses.CourseStudent", b =>
                 {
                     b.HasOne("Dev.Acadmy.Courses.Course", "Course")
@@ -2877,8 +2821,6 @@ namespace Dev.Acadmy.Migrations
             modelBuilder.Entity("Dev.Acadmy.Courses.Course", b =>
                 {
                     b.Navigation("Chapters");
-
-                    b.Navigation("CourseInfos");
 
                     b.Navigation("QuestionBank")
                         .IsRequired();

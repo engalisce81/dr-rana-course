@@ -2,6 +2,7 @@
 using Dev.Acadmy.AccountTypes;
 using Dev.Acadmy.LookUp;
 using Dev.Acadmy.Response;
+using Dev.Acadmy.Subjects;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -20,8 +21,10 @@ namespace Dev.Acadmy.AccountCustoms
         private readonly IdentityUserManager _userManager;
         private readonly IRepository<AccountType, Guid> _accountTypeRepository;
         private readonly IIdentityRoleRepository _roleRepository;
-        public AccountCustomManager(IIdentityRoleRepository roleRepository, IIdentityUserRepository userRepository , IRepository<AccountType, Guid> accountTypeRepository , IdentityUserManager userManager) 
+        private readonly IRepository<Subject, Guid> _subjectRepository;
+        public AccountCustomManager(IRepository<Subject, Guid> subjectRepository, IIdentityRoleRepository roleRepository, IIdentityUserRepository userRepository , IRepository<AccountType, Guid> accountTypeRepository , IdentityUserManager userManager) 
         {
+            _subjectRepository = subjectRepository;
             _roleRepository = roleRepository;
             _userManager = userManager;
             _accountTypeRepository = accountTypeRepository;
@@ -37,13 +40,20 @@ namespace Dev.Acadmy.AccountCustoms
         
         public async Task<ResponseApi<LookupDto>> RegisterAsync(RegistercustomDto input)
         {
-            if (await _userRepository.FindByNormalizedEmailAsync(input.UserName.ToUpper()) != null ) return new ResponseApi<LookupDto> { Data= null ,Success=false ,Message= "The Email or User Name Already Exist" };
+            if (await _userRepository.FindByNormalizedEmailAsync(input.UserName.ToUpper()) != null) throw new UserFriendlyException("The Email or User Name Already Exist");
             var user = new IdentityUser(Guid.NewGuid(), input.UserName, input.UserName);
-            var role = await GetRole(input.AccountTypeId);
-            user.SetProperty(SetPropConsts.AccountTypeId , input.AccountTypeId);
+            var accountType = await _accountTypeRepository.FirstOrDefaultAsync(x=>x.Key == input.AccountTypeKey);   
+            if(accountType == null)  throw new UserFriendlyException("Account Type Not Found"); 
+            var role = await GetRole(accountType.Id);
+            user.SetProperty(SetPropConsts.AccountTypeId , accountType.Id);
             user.Name = input.FullName;
             user.SetProperty(SetPropConsts.CollegeId, input.CollegeId);
             user.SetProperty(SetPropConsts.Gender,input.Gender);
+            if(accountType.Key == (int)AccountTypeKey.Teacher)
+            {
+                var subject = await _subjectRepository.GetAsync(x => x.Id == input.SubjectId);
+                user.SetProperty(SetPropConsts.SubjectId, input.SubjectId);
+            }
             user.SetIsActive(true);
             var result = await _userManager.CreateAsync(user, input.Password);
             if (result.Succeeded)
@@ -58,9 +68,9 @@ namespace Dev.Acadmy.AccountCustoms
                         return new ResponseApi<LookupDto> { Data = lookupDto, Success = true, Message = "Register Success" };
                     }
                 }
-                else return new ResponseApi<LookupDto> { Data = null, Success = false, Message = "Role Not Found" };
+                else throw new UserFriendlyException("Role Not Found");
             }
-            else  return new ResponseApi<LookupDto> { Data = null, Success = false, Message = "Can't Create This Account" };
+            else throw new UserFriendlyException("Can't Create This Account");
         }
         private async Task<IdentityRole> GetRole(Guid accountTypeId)
         {

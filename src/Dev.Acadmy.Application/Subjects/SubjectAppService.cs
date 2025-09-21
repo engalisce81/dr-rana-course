@@ -1,0 +1,36 @@
+﻿using Dev.Acadmy.Subjects;
+using Dev.Acadmy.LookUp;
+using Dev.Acadmy.Permissions;
+using Dev.Acadmy.Response;
+using Microsoft.AspNetCore.Authorization;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Volo.Abp.Application.Dtos;
+using Volo.Abp.Application.Services;
+
+namespace Dev.Acadmy.Subjects
+{
+    public class SubjectAppService :ApplicationService
+    {
+        private readonly SubjectManager _subjectManager;
+        public SubjectAppService(SubjectManager subjectManager)
+        {
+            _subjectManager = subjectManager;
+        }
+        [Authorize(AcadmyPermissions.Subjects.View)]
+        public async Task<ResponseApi<SubjectDto>> GetAsync(Guid id) => await _subjectManager.GetAsync(id);
+        [Authorize(AcadmyPermissions.Subjects.View)]
+        public async Task<PagedResultDto<SubjectDto>> GetListAsync(int pageNumber, int pageSize, string? search) => await _subjectManager.GetListAsync(pageNumber, pageSize, search);
+        [Authorize(AcadmyPermissions.Subjects.Create)]
+        public async Task<ResponseApi<SubjectDto>> CreateAsync(CreateUpdateSubjectDto input) => await _subjectManager.CreateAsync(input);
+        [Authorize(AcadmyPermissions.Subjects.Edit)]
+        public async Task<ResponseApi<SubjectDto>> UpdateAsync(Guid id, CreateUpdateSubjectDto input) => await _subjectManager.UpdateAsync(id, input);
+        [Authorize(AcadmyPermissions.Subjects.Delete)]
+        public async Task DeleteAsync(Guid id) => await _subjectManager.DeleteAsync(id);
+        [AllowAnonymous]
+        public async Task<PagedResultDto<LookupDto>> GetSubjectsListAsync() => await _subjectManager.GetSubjectsListAsync();
+    }
+}

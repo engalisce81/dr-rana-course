@@ -119,6 +119,10 @@ public class AcadmyHttpApiHostModule : AbpModule
                 }
             );
         });
+        Configure<OpenIddictServerAspNetCoreBuilder>(configure =>
+        {
+            configure.DisableTransportSecurityRequirement();
+        });
     }
 
     private void ConfigureUrls(IConfiguration configuration)
@@ -210,15 +214,15 @@ public class AcadmyHttpApiHostModule : AbpModule
         {
             app.UseDeveloperExceptionPage();
         }
-        app.UseForwardedHeaders(new ForwardedHeadersOptions
-        {
-            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-        });
+        
         app.UseAbpRequestLocalization();
-        app.UseForwardedHeaders();
         if (!env.IsDevelopment())
         {
-
+            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+            });
+            app.UseForwardedHeaders();
             app.UseErrorPage();
             app.Use((context, next) =>
             {

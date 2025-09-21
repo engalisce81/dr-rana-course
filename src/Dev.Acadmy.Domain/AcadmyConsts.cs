@@ -11,6 +11,7 @@ public static class SetPropConsts
 {
     public const string CollegeId = "CollegeId";
     public const string AccountTypeId = "AccountTypeId";
+    public const string SubjectId = "SubjectId";
     public const string Gender = "Gender";
 }
 

@@ -20,6 +20,7 @@ using Volo.Abp.PermissionManagement.EntityFrameworkCore;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
+using Dev.Acadmy.Subjects;
 
 namespace Dev.Acadmy.EntityFrameworkCore;
 
@@ -74,6 +75,8 @@ public class AcadmyDbContext :
     public DbSet<MediaItem> MediaItems { get; set; }
     public DbSet<Chapter> Chapters { get; set; }
     public DbSet<AccountType> AccountTypes { get; set; }
+    public DbSet<Subject> Subjects { get; set; }
+
     public AcadmyDbContext(DbContextOptions<AcadmyDbContext> options)
         : base(options)
     {

@@ -7,6 +7,7 @@ using Dev.Acadmy.LookUp;
 using Dev.Acadmy.MediaItems;
 using Dev.Acadmy.Questions;
 using Dev.Acadmy.Quizzes;
+using Dev.Acadmy.Subjects;
 
 namespace Dev.Acadmy;
 
@@ -60,6 +61,9 @@ public class AcadmyApplicationAutoMapperProfile : Profile
         // QuizStudent
         CreateMap<QuizStudent, QuizStudentDto>();
         CreateMap<CreateUpdateQuizStudentDto, QuizStudent>();
+
+        CreateMap<Subject, SubjectDto>();
+        CreateMap<CreateUpdateSubjectDto, Subject>();
 
         CreateMap<LookupDto, QuestionBank>().ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name)); ;
         CreateMap<LookupDto, QuestionType>().ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name));

@@ -1,5 +1,4 @@
-﻿
-using Dev.Acadmy.LookUp;
+﻿using Dev.Acadmy.LookUp;
 using Dev.Acadmy.Permissions;
 using Dev.Acadmy.Response;
 using Microsoft.AspNetCore.Authorization;
@@ -30,6 +29,6 @@ namespace Dev.Acadmy.Courses
         [Authorize]
         public async Task<PagedResultDto<LookupDto>> GetCoursesListAsync() => await _courseManager.GetCoursesListAsync();
         [Authorize]
-        public async Task<PagedResultDto<CourseInfoDto>> GetCoursesInfoListAsync(int pageNumber, int pageSize, string? search)=> await _courseManager.GetCoursesInfoListAsync(pageNumber, pageSize, search);
+        public async Task<PagedResultDto<CourseInfoHomeDto>> GetCoursesInfoListAsync(int pageNumber, int pageSize, string? search ,bool alreadyJoin, Guid? subjectId) => await _courseManager.GetCoursesInfoListAsync(pageNumber, pageSize, search,alreadyJoin, subjectId);
     }
 }

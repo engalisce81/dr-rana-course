@@ -17,7 +17,7 @@ namespace Dev.Acadmy.Configuration
     {
         public void Configure(EntityTypeBuilder<Courses.Course> builder)
         {
-            builder.ToTable(AcadmyConsts.DbTablePrefix +"Courses" + AcadmyConsts.DbTablePrefix);
+            builder.ToTable(AcadmyConsts.DbTablePrefix +"Courses" + AcadmyConsts.DbSchema);
 
             builder.Property(x => x.Title)
                    .IsRequired()

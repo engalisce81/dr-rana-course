@@ -15,9 +15,9 @@ namespace Dev.Acadmy.Colleges
 {
     public class CollegeManager :DomainService
     {
-        private readonly IRepository<College> _collegeRepository;
+        private readonly IRepository<College ,Guid> _collegeRepository;
         private readonly IMapper _mapper;
-        public CollegeManager(IMapper mapper, IRepository<College> collegeRepository) 
+        public CollegeManager(IMapper mapper, IRepository<College,Guid> collegeRepository) 
         {
             _collegeRepository = collegeRepository;
             _mapper = mapper;

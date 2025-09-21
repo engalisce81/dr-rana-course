@@ -93,6 +93,13 @@ public class AcadmyPermissionDefinitionProvider : PermissionDefinitionProvider
         quizStudents.AddChild(AcadmyPermissions.QuizStudents.Edit, L("Permission:QuizStudents.Edit"));
         quizStudents.AddChild(AcadmyPermissions.QuizStudents.Delete, L("Permission:QuizStudents.Delete"));
         quizStudents.AddChild(AcadmyPermissions.QuizStudents.View, L("Permission:QuizStudents.View"));
+
+        // Subjects
+        var subjects = group.AddPermission(AcadmyPermissions.Subjects.Default, L("Permission:Subjects"));
+        subjects.AddChild(AcadmyPermissions.Subjects.Create, L("Permission:Subjects.Create"));
+        subjects.AddChild(AcadmyPermissions.Subjects.Edit, L("Permission:Subjects.Edit"));
+        subjects.AddChild(AcadmyPermissions.Subjects.Delete, L("Permission:Subjects.Delete"));
+        subjects.AddChild(AcadmyPermissions.Subjects.View, L("Permission:Subjects.View"));
     }
 
     private static LocalizableString L(string name)

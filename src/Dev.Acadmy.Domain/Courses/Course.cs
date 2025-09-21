@@ -2,9 +2,11 @@
 using Dev.Acadmy.Chapters;
 using Dev.Acadmy.Colleges;
 using Dev.Acadmy.Questions;
+using Dev.Acadmy.Subjects;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Security.Cryptography.X509Certificates;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.Identity;
 
@@ -16,8 +18,10 @@ namespace Dev.Acadmy.Courses
         public string Title { get; set;}
         public string Description { get; set;}
         public decimal Price { get; set;}
+        public float Rating { get; set; } // average rating
         public Guid UserId { get; set; }
         public Guid? CollegeId { get; set;}
+        public Guid? SubjectId { get; set; }
 
         // Visibility
         public bool IsActive { get; set; } = true; // enabled/disabled
@@ -30,6 +34,9 @@ namespace Dev.Acadmy.Courses
         [ForeignKey(nameof(UserId))]
         public IdentityUser User { get; set; }
         public QuestionBank QuestionBank { get; set; }
+        [ForeignKey(nameof(SubjectId))]
+        public Subject? Subject { get; set; }
         public ICollection<Chapter>  Chapters { get; set; } = new List<Chapter>();
+        public ICollection<CourseInfo> CourseInfos { get; set; } = new List<CourseInfo>();
     }
 }
