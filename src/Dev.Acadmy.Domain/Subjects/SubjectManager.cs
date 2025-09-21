@@ -17,6 +17,7 @@ using Dev.Acadmy.LookUp;
 using Dev.Acadmy.Colleges;
 using Volo.Abp.Data;
 using Microsoft.EntityFrameworkCore;
+using Volo.Abp;
 
 namespace Dev.Acadmy.Subjects
 {
@@ -84,8 +85,9 @@ namespace Dev.Acadmy.Subjects
         {
             var currentUser = await _userRepository.GetAsync(_currentUser.GetId());
             var collegeId = currentUser.GetProperty<Guid?>(SetPropConsts.CollegeId);
-            if(collegeId == null) { }
+            if(collegeId == null) { throw new UserFriendlyException("not found College"); }
             var subjects =await (await _collegeRepository.GetQueryableAsync()).Include(x=>x.Subjects).Select(x=>x.Subjects).ToListAsync();
+            if(subjects == null || subjects.Count() == 0) return new PagedResultDto<LookupDto>(0, new List<LookupDto>());
             var subjectDtos = _mapper.Map<List<LookupDto>>(subjects);
             return new PagedResultDto<LookupDto>(subjectDtos.Count, subjectDtos);
         }

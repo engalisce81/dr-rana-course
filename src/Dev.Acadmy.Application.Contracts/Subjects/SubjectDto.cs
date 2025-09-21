@@ -10,5 +10,7 @@ namespace Dev.Acadmy.Subjects
     public class SubjectDto :EntityDto<Guid>
     {
         public string Name { get; set; }
+        public Guid? CollegeId { get; set; }
+
     }
 }
