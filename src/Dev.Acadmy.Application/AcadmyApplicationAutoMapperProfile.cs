@@ -84,6 +84,6 @@ public class AcadmyApplicationAutoMapperProfile : Profile
         CreateMap<College, LookupDto>();
         CreateMap<Courses.Course, LookupDto>();
         CreateMap<Chapter, LookupDto>();
-        CreateMap< Subject ,LookupDto>();
+        CreateMap<Subject ,LookupDto>();
     }
 }
