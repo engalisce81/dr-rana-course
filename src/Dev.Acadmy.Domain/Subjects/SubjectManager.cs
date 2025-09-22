@@ -86,7 +86,7 @@ namespace Dev.Acadmy.Subjects
             var currentUser = await _userRepository.GetAsync(_currentUser.GetId());
             var collegeId = currentUser.GetProperty<Guid?>(SetPropConsts.CollegeId);
             if(collegeId == null) { throw new UserFriendlyException("not found College"); }
-            var subjects =await (await _collegeRepository.GetQueryableAsync()).Where(x=>x.Id == collegeId).Include(x=>x.Subjects).Select(x=>x.Subjects).ToListAsync();
+            var subjects =await (await _collegeRepository.GetQueryableAsync()).Where(x=>x.Id == collegeId).Include(x=>x.Subjects).SelectMany(x=>x.Subjects).ToListAsync();
             if(subjects == null || subjects.Count() == 0) return new PagedResultDto<LookupDto>(0, new List<LookupDto>());
             var subjectDtos = _mapper.Map<List<LookupDto>>(subjects);
             return new PagedResultDto<LookupDto>(subjectDtos.Count, subjectDtos);
