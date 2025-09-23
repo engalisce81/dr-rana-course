@@ -94,14 +94,14 @@ namespace Dev.Acadmy.Chapters
             if (pageNumber <= 0) pageNumber = 1;
             if (pageSize <= 0) pageSize = 10;
             var queryable = await _chapterRepository.GetQueryableAsync();
-            var query = queryable.Include(c => c.Lectures).ThenInclude(l => l.Quiz).ThenInclude(q => q.Questions) .Where(c => c.CourseId == courseId);
+            var query = queryable.Include(c => c.Lectures).ThenInclude(l => l.Quiz).ThenInclude(q => q.Questions).Where(c => c.CourseId == courseId);
             var totalCount = await query.CountAsync();
             var chapters = await query.OrderBy(c => c.CreationTime).Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
             var chapterInfoDtos = chapters.Select(c => new CourseChaptersDto
             {
                 ChapterId = c.Id,
                 ChapterName = c.Name,
-                Lectures = c.Lectures.Select(l => new LectureInfoDto
+                Lectures = c.Lectures.Where(x=>x.IsVisible).Select(l => new LectureInfoDto
                 {
                     LectureId = l.Id,
                     Title = l.Title,
