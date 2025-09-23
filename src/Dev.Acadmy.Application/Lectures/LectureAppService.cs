@@ -1,10 +1,9 @@
 ﻿
 using Dev.Acadmy.Permissions;
+using Dev.Acadmy.Quizzes;
 using Dev.Acadmy.Response;
 using Microsoft.AspNetCore.Authorization;
 using System;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -28,5 +27,7 @@ namespace Dev.Acadmy.Lectures
         public async Task<ResponseApi<LectureDto>> UpdateAsync(Guid id, CreateUpdateLectureDto input) => await _lectureManager.UpdateAsync(id, input);
         [Authorize(AcadmyPermissions.Lectures.Delete)]
         public async Task DeleteAsync(Guid id) => await _lectureManager.DeleteAsync(id);
+        [Authorize]
+        public async Task<ResponseApi<QuizDetailsDto>> GetQuizDetailsAsync(Guid quizId) => await _lectureManager.GetQuizDetailsAsync(quizId);
     }
 }

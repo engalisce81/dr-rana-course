@@ -12,18 +12,22 @@ using Volo.Abp.Users;
 using Microsoft.EntityFrameworkCore;
 using Dev.Acadmy.Quizzes;
 using Dev.Acadmy.Response;
+using Dev.Acadmy.Questions;
+using Volo.Abp;
 
 namespace Dev.Acadmy.Lectures
 {
     public class LectureManager:DomainService
     {
-        private readonly IRepository<Lecture> _lectureRepository;
+        private readonly IRepository<Lecture,Guid> _lectureRepository;
         private readonly IMapper _mapper;
         private readonly IIdentityUserRepository _userRepository;
         private readonly ICurrentUser _currentUser;
         private readonly QuizManager _quizManager;
-        public LectureManager(QuizManager quizManager, ICurrentUser currentUser, IIdentityUserRepository userRepository, IMapper mapper, IRepository<Lecture> lectureRepository)
+        private readonly IRepository<Quiz ,Guid> _quizRepository;
+        public LectureManager(IRepository<Quiz,Guid> quizRepository, QuizManager quizManager, ICurrentUser currentUser, IIdentityUserRepository userRepository, IMapper mapper, IRepository<Lecture,Guid> lectureRepository)
         {
+            _quizRepository = quizRepository;
             _quizManager = quizManager;
             _currentUser = currentUser;
             _userRepository = userRepository;
@@ -92,5 +96,44 @@ namespace Dev.Acadmy.Lectures
             if(quiz.Data != null) await _quizManager.DeleteAsync(quiz.Data.Id);
             return new ResponseApi<bool> { Data = true, Success = true, Message = "delete succeess" };
         }
+
+        public async Task<ResponseApi<QuizDetailsDto>> GetQuizDetailsAsync(Guid quizId)
+        {
+            var queryable = await _quizRepository.GetQueryableAsync();
+
+            var quiz = await queryable
+                .Include(q => q.Questions)
+                    .ThenInclude(q => q.QuestionAnswers)
+                .Include(q => q.Questions)
+                    .ThenInclude(q => q.QuestionType)
+                .FirstOrDefaultAsync(q => q.Id == quizId);
+
+            if (quiz == null)
+                throw new UserFriendlyException("Quiz not found");
+            var dto = new QuizDetailsDto
+            {
+                QuizId = quiz.Id,
+                Title = quiz.Title,
+                QuizTime = quiz.QuizTime,
+                Questions = quiz.Questions.Select(q => new QuestionDetailesDto
+                {
+                    QuestionId = q.Id,
+                    Title = q.Title,
+                    Score = q.Score,
+                    QuestionType = q.QuestionType?.Name ?? "",
+                    QuestionTypeKey = q.QuestionType?.Key ?? 0, // إضافة الـ Key
+
+                    Answers = q.QuestionAnswers.Select(a => new QuestionAnswerDetailesDto
+                    {
+                        AnswerId = a.Id,
+                        Answer = a.Answer,
+                        IsCorrect = a.IsCorrect
+                    }).ToList()
+                }).ToList()
+            };
+            return new ResponseApi <QuizDetailsDto> { Data = dto, Success = true, Message = "find success" };
+        }
+        
+
     }
 }
