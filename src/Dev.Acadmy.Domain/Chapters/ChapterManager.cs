@@ -23,8 +23,10 @@ namespace Dev.Acadmy.Chapters
         private readonly IMapper _mapper;
         private readonly IIdentityUserRepository _userRepository;
         private readonly ICurrentUser _currentUser;
-        public ChapterManager(ICurrentUser currentUser, IIdentityUserRepository userRepository, IMapper mapper, IRepository<Chapter> chapterRepository)
+        private readonly IRepository<QuizStudent, Guid> _quizStudentRepository;
+        public ChapterManager(IRepository<QuizStudent, Guid> quizStudentRepository, ICurrentUser currentUser, IIdentityUserRepository userRepository, IMapper mapper, IRepository<Chapter> chapterRepository)
         {
+            _quizStudentRepository = quizStudentRepository;
             _currentUser = currentUser;
             _userRepository = userRepository;
             _chapterRepository = chapterRepository;
@@ -93,29 +95,52 @@ namespace Dev.Acadmy.Chapters
         {
             if (pageNumber <= 0) pageNumber = 1;
             if (pageSize <= 0) pageSize = 10;
+
+            var currentUser = await _userRepository.GetAsync(_currentUser.GetId());
+
+            // نجيب كل الكويزات اللي الطالب جاوبها قبل كده
+            var answeredQuizIds = await (await _quizStudentRepository.GetQueryableAsync())
+                .Where(qs => qs.UserId == currentUser.Id)
+                .Select(qs => qs.QuizId)
+                .ToListAsync();
+
             var queryable = await _chapterRepository.GetQueryableAsync();
-            var query = queryable.Include(c => c.Lectures).ThenInclude(l => l.Quiz).ThenInclude(q => q.Questions).Where(c => c.CourseId == courseId);
+            var query = queryable
+                .Include(c => c.Lectures)
+                    .ThenInclude(l => l.Quiz)
+                        .ThenInclude(q => q.Questions)
+                .Where(c => c.CourseId == courseId);
+
             var totalCount = await query.CountAsync();
-            var chapters = await query.OrderBy(c => c.CreationTime).Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+
+            var chapters = await query
+                .OrderBy(c => c.CreationTime)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
             var chapterInfoDtos = chapters.Select(c => new CourseChaptersDto
             {
                 ChapterId = c.Id,
                 ChapterName = c.Name,
-                Lectures = c.Lectures.Where(x=>x.IsVisible).Select(l => new LectureInfoDto
+                Lectures = c.Lectures.Where(x => x.IsVisible).Select(l => new LectureInfoDto
                 {
                     LectureId = l.Id,
                     Title = l.Title,
-                    Content = l.Content, 
+                    Content = l.Content,
                     VideoUrl = l.VideoUrl,
                     Quiz = new QuizInfoDto
                     {
                         QuizId = l.Quiz.Id,
                         Title = l.Quiz.Title,
-                        QuestionsCount = l.Quiz.Questions.Count 
+                        QuestionsCount = l.Quiz.Questions.Count,
+                        AlreadyAnswer = answeredQuizIds.Contains(l.Quiz.Id) 
                     }
                 }).ToList()
             }).ToList();
+
             return new PagedResultDto<CourseChaptersDto>(totalCount, chapterInfoDtos);
         }
+
     }
 }

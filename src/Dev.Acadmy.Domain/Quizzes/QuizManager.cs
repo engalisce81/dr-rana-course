@@ -7,17 +7,24 @@ using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
+using Microsoft.EntityFrameworkCore;
+using Volo.Abp;
+using Volo.Abp.Users;
 
 namespace Dev.Acadmy.Quizzes
 {
     public class QuizManager :DomainService
     {
-        private readonly IRepository<Quiz> _quizRepository;
+        private readonly IRepository<Quiz ,Guid> _quizRepository;
         private readonly IMapper _mapper;
-        public QuizManager(IMapper mapper, IRepository<Quiz> quizRepository)
+        private readonly IRepository<QuizStudent> _quizStudentRepository;
+        private readonly ICurrentUser _currentUser;
+        public QuizManager(ICurrentUser currentUser, IRepository<QuizStudent> quizStudentRepository, IMapper mapper, IRepository<Quiz,Guid> quizRepository)
         {
+            _currentUser = currentUser;
             _quizRepository = quizRepository;
             _mapper = mapper;
+            _quizStudentRepository = quizStudentRepository;
         }
 
         public async Task<ResponseApi<QuizDto>> GetAsync(Guid id)
@@ -63,5 +70,70 @@ namespace Dev.Acadmy.Quizzes
             await _quizRepository.DeleteAsync(quiz);
             return new ResponseApi<bool> { Data = true, Success = true, Message = "delete succeess" };
         }
+
+        public async Task<ResponseApi<QuizResultDto>> CorrectQuizAsync(QuizAnswerDto input)
+        {
+            var userId = _currentUser.GetId();
+            var quiz = await (await _quizRepository.GetQueryableAsync()).Include(q => q.Questions).ThenInclude(q => q.QuestionAnswers).Include(q => q.Questions).ThenInclude(q => q.QuestionType).FirstOrDefaultAsync(q => q.Id == input.QuizId);
+            if (quiz == null)throw new UserFriendlyException("Quiz not found");
+            var alreadyAnswered = await _quizStudentRepository.FirstOrDefaultAsync(x => x.UserId == userId && x.QuizId == input.QuizId);
+            if (alreadyAnswered != null) throw new UserFriendlyException("You have already submitted this quiz. You cannot attempt it again.");
+            double totalScore = 0;
+            double studentScore = 0;
+            foreach (var question in quiz.Questions)
+            {
+                var studentAnswer = input.Answers.FirstOrDefault(a => a.QuestionId == question.Id);
+                if (studentAnswer == null) continue;
+                switch ((QuestionTypeEnum)question.QuestionType.Key)
+                {
+                    case QuestionTypeEnum.MCQ:
+                    case QuestionTypeEnum.TrueOrFalse:
+                        if (studentAnswer.SelectedAnswerId != null)
+                        {
+                            var correctAnswer = question.QuestionAnswers.FirstOrDefault(a => a.IsCorrect);
+                            if (correctAnswer != null && correctAnswer.Id == studentAnswer.SelectedAnswerId)
+                                studentScore += question.Score;
+                        }
+                        break;
+
+                    case QuestionTypeEnum.ShortAnswer:
+                        if (!string.IsNullOrWhiteSpace(studentAnswer.TextAnswer))
+                        {
+                            var keywords = question.QuestionAnswers.Select(a => a.Answer.ToLower()).ToList();
+                            var studentText = studentAnswer.TextAnswer.ToLower();
+
+                            int matched = keywords.Count(k => studentText.Contains(k));
+                            if (matched > 0)
+                            {
+                                double ratio = (double)matched / keywords.Count;
+                                studentScore += question.Score * ratio;
+                            }
+                        }
+                        break;
+
+                    case QuestionTypeEnum.CompleteAnswer:
+                        if (!string.IsNullOrWhiteSpace(studentAnswer.TextAnswer))
+                        {
+                            var correctAnswer = question.QuestionAnswers.FirstOrDefault(a => a.IsCorrect);
+                            if (correctAnswer != null &&
+                                string.Equals(studentAnswer.TextAnswer.Trim(), correctAnswer.Answer.Trim(), StringComparison.OrdinalIgnoreCase))
+                            {
+                                studentScore += question.Score; // ياخد الدرجة كاملة لو الكلمة صح
+                            }
+                        }
+                        break;
+                }
+                totalScore += question.Score;
+            }
+            var quizStudent = new QuizStudent
+            {
+                UserId = userId,
+                QuizId = quiz.Id,
+                Score = (int)studentScore
+            };
+            await _quizStudentRepository.InsertAsync(quizStudent);
+            return new ResponseApi<QuizResultDto>{Data= new QuizResultDto{QuizId = quiz.Id,TotalScore = totalScore,StudentScore = studentScore},Success= true,Message="Correct Success" };
+        }
+
     }
 }

@@ -1,5 +1,4 @@
-﻿
-using Dev.Acadmy.Permissions;
+﻿using Dev.Acadmy.Permissions;
 using Dev.Acadmy.Quizzes;
 using Dev.Acadmy.Response;
 using Microsoft.AspNetCore.Authorization;
@@ -13,8 +12,10 @@ namespace Dev.Acadmy.Lectures
     public class LectureAppService:ApplicationService
     {
         private readonly LectureManager _lectureManager;
-        public LectureAppService(LectureManager lectureManager)
+        private readonly QuizManager _quizManager;
+        public LectureAppService(QuizManager quizManager, LectureManager lectureManager)
         {
+            _quizManager = quizManager;
             _lectureManager = lectureManager;
         }
         [Authorize(AcadmyPermissions.Lectures.View)]
@@ -29,5 +30,7 @@ namespace Dev.Acadmy.Lectures
         public async Task DeleteAsync(Guid id) => await _lectureManager.DeleteAsync(id);
         [Authorize]
         public async Task<ResponseApi<QuizDetailsDto>> GetQuizDetailsAsync(Guid quizId) => await _lectureManager.GetQuizDetailsAsync(quizId);
+        [Authorize]
+        public async Task<ResponseApi<QuizResultDto>> CorrectQuizAsync(QuizAnswerDto input) => await _quizManager.CorrectQuizAsync(input);
     }
 }

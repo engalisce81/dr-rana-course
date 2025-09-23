@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Dev.Acadmy.Quizzes
 {
@@ -11,5 +7,6 @@ namespace Dev.Acadmy.Quizzes
         public Guid QuizId { get; set; }
         public string Title { get; set; }
         public int QuestionsCount { get; set; }
+        public bool AlreadyAnswer { get; set; }
     }
 }
