@@ -89,12 +89,12 @@ namespace Dev.Acadmy.Chapters
             return new PagedResultDto<LookupDto>(chapterDtos.Count, chapterDtos);
         }
 
-        public async Task<PagedResultDto<CourseChaptersDto>> GetCourseChaptersAsync(Guid courseId,int pageNumber,int pageSize)
+        public async Task<PagedResultDto<CourseChaptersDto>> GetCourseChaptersAsync(Guid courseId, int pageNumber, int pageSize)
         {
             if (pageNumber <= 0) pageNumber = 1;
             if (pageSize <= 0) pageSize = 10;
             var queryable = await _chapterRepository.GetQueryableAsync();
-            var query = queryable.Include(c => c.Lectures).ThenInclude(l => l.Quiz).Where(c => c.CourseId == courseId);
+            var query = queryable.Include(c => c.Lectures).ThenInclude(l => l.Quiz).ThenInclude(q => q.Questions) .Where(c => c.CourseId == courseId);
             var totalCount = await query.CountAsync();
             var chapters = await query.OrderBy(c => c.CreationTime).Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
             var chapterInfoDtos = chapters.Select(c => new CourseChaptersDto
@@ -105,16 +105,17 @@ namespace Dev.Acadmy.Chapters
                 {
                     LectureId = l.Id,
                     Title = l.Title,
+                    Content = l.Content, 
                     VideoUrl = l.VideoUrl,
                     Quiz = new QuizInfoDto
                     {
                         QuizId = l.Quiz.Id,
-                        Title = l.Quiz.Title
+                        Title = l.Quiz.Title,
+                        QuestionsCount = l.Quiz.Questions.Count 
                     }
                 }).ToList()
             }).ToList();
             return new PagedResultDto<CourseChaptersDto>(totalCount, chapterInfoDtos);
         }
-
     }
 }
