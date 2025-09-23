@@ -5,13 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 
-namespace Dev.Acadmy.Colleges
+namespace Dev.Acadmy.Universites
 {
-    public class CollegeDto :EntityDto<Guid>
+    public class UniversityDto :AuditedEntityDto<Guid>
     {
         public string Name { get; set; }
-        public Guid? CollegeId { get; set; }
-        public string? CollegeName { get; set; }
 
     }
 }

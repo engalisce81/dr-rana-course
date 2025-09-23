@@ -1,13 +1,12 @@
 ﻿using AutoMapper;
 using Dev.Acadmy.Chapters;
-using Dev.Acadmy.Colleges;
 using Dev.Acadmy.Courses;
 using Dev.Acadmy.Lectures;
 using Dev.Acadmy.LookUp;
 using Dev.Acadmy.MediaItems;
 using Dev.Acadmy.Questions;
 using Dev.Acadmy.Quizzes;
-using Dev.Acadmy.Subjects;
+using Dev.Acadmy.Universites;
 
 namespace Dev.Acadmy;
 
@@ -68,6 +67,12 @@ public class AcadmyApplicationAutoMapperProfile : Profile
         CreateMap<CourseInfo, CourseInfoDto>();
         CreateMap<CreateUpdateCourseInfoDto, CourseInfo>();
 
+        CreateMap<University,UniversityDto>();
+        CreateMap<CreateUpdateUniversityDto ,  University>();
+
+        CreateMap<GradeLevel,GradeLevelDto>();  
+        CreateMap<CreateUpdateGradeLevelDto, GradeLevel>();                                 
+
         CreateMap<LookupDto, QuestionBank>().ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name)); ;
         CreateMap<LookupDto, QuestionType>().ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name));
         CreateMap<LookupDto, Quiz>().ForMember(dest => dest.Title, opt => opt.MapFrom(src => src.Name));
@@ -76,6 +81,9 @@ public class AcadmyApplicationAutoMapperProfile : Profile
         CreateMap<LookupDto, Courses.Course>();
         CreateMap<LookupDto, Chapter>();
         CreateMap<LookupDto, Subject>();
+        CreateMap<LookupDto, University>();
+        CreateMap<LookupDto, GradeLevel>();
+        CreateMap<LookupDto, Term>();
 
         CreateMap<QuestionBank, LookupDto>().ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name));
         CreateMap<QuestionType, LookupDto>().ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name));
@@ -85,5 +93,9 @@ public class AcadmyApplicationAutoMapperProfile : Profile
         CreateMap<Courses.Course, LookupDto>();
         CreateMap<Chapter, LookupDto>();
         CreateMap<Subject ,LookupDto>();
+        CreateMap<University,LookupDto>();
+        CreateMap<GradeLevel, LookupDto>();
+        CreateMap<Term, LookupDto>();
+
     }
 }

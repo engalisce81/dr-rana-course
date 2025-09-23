@@ -1,5 +1,4 @@
-﻿using Dev.Acadmy.Colleges;
-using Dev.Acadmy.Subjects;
+﻿using Dev.Acadmy.Universites;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System;
@@ -21,7 +20,8 @@ namespace Dev.Acadmy.Configuration
                    .IsRequired()
                    .HasMaxLength(200);
             builder.HasMany(x=>x.Courses).WithOne(x=>x.Subject).HasForeignKey(x=>x.SubjectId);
-            builder.HasOne(x => x.College).WithMany(x => x.Subjects).HasForeignKey(x => x.CollegeId);
+           // builder.HasOne(x => x.GradeLevel).WithMany(x => x.Subjectls).HasForeignKey(x => x.GradeLevel);
+
 
         }
     }

@@ -9,7 +9,7 @@ using Volo.Abp.Application.Services;
 
 namespace Dev.Acadmy.Chapters
 {
-    public class ChapterAppService :ApplicationService
+    public class ChapterAppService : ApplicationService
     {
         private readonly ChapterManager _chapterManager;
         public ChapterAppService(ChapterManager chapterManager)
@@ -28,7 +28,7 @@ namespace Dev.Acadmy.Chapters
         public async Task DeleteAsync(Guid id) => await _chapterManager.DeleteAsync(id);
         [Authorize]
         public async Task<PagedResultDto<LookupDto>> GetListChaptersAsync() => await _chapterManager.GetListChaptersAsync();
-
-
+        [Authorize]
+        public async Task<PagedResultDto<CourseChaptersDto>> GetCourseChaptersAsync(Guid courseId, int pageNumber, int pageSize) => await _chapterManager.GetCourseChaptersAsync(courseId, pageNumber, pageSize);
     }
 }

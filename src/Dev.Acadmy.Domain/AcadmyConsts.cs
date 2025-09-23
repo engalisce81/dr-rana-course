@@ -14,6 +14,9 @@ public static class SetPropConsts
     public const string SubjectId = "SubjectId";
     public const string StudentMobileIP = "StudentMobileIP";
     public const string Gender = "Gender";
+    public const string UniversityId = "UniversityId";
+    public const string GradeLevelId = "GradeLevelId";
+    public const string TermId = "TermId";
 }
 
 public static class RoleConsts

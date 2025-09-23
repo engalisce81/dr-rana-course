@@ -1,7 +1,7 @@
 ﻿using Dev.Acadmy.AccountTypes;
-using Dev.Acadmy.Colleges;
 using Dev.Acadmy.MediaItems;
 using Dev.Acadmy.Response;
+using Dev.Acadmy.Universites;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;

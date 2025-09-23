@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
+using Dev.Acadmy.Lectures;
 using Dev.Acadmy.LookUp;
+using Dev.Acadmy.Quizzes;
 using Dev.Acadmy.Response;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -85,6 +87,34 @@ namespace Dev.Acadmy.Chapters
             else chapters = await AsyncExecuter.ToListAsync(queryable.Where(c => c.CreatorId == _currentUser.GetId()).OrderByDescending(c => c.CreationTime).Take(100));
             var chapterDtos = _mapper.Map<List<LookupDto>>(chapters);
             return new PagedResultDto<LookupDto>(chapterDtos.Count, chapterDtos);
-        }   
+        }
+
+        public async Task<PagedResultDto<CourseChaptersDto>> GetCourseChaptersAsync(Guid courseId,int pageNumber,int pageSize)
+        {
+            if (pageNumber <= 0) pageNumber = 1;
+            if (pageSize <= 0) pageSize = 10;
+            var queryable = await _chapterRepository.GetQueryableAsync();
+            var query = queryable.Include(c => c.Lectures).ThenInclude(l => l.Quiz).Where(c => c.CourseId == courseId);
+            var totalCount = await query.CountAsync();
+            var chapters = await query.OrderBy(c => c.CreationTime).Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+            var chapterInfoDtos = chapters.Select(c => new CourseChaptersDto
+            {
+                ChapterId = c.Id,
+                ChapterName = c.Name,
+                Lectures = c.Lectures.Select(l => new LectureInfoDto
+                {
+                    LectureId = l.Id,
+                    Title = l.Title,
+                    VideoUrl = l.VideoUrl,
+                    Quiz = new QuizInfoDto
+                    {
+                        QuizId = l.Quiz.Id,
+                        Title = l.Quiz.Title
+                    }
+                }).ToList()
+            }).ToList();
+            return new PagedResultDto<CourseChaptersDto>(totalCount, chapterInfoDtos);
+        }
+
     }
 }

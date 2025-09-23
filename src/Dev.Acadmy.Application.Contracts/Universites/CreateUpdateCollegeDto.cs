@@ -4,11 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Dev.Acadmy.Colleges
+namespace Dev.Acadmy.Universites
 {
     public class CreateUpdateCollegeDto
     {
-       public string Name { get; set; }
-        public Guid? CollegeId { get; set; }
+        public string Name { get; set; }
+        public Guid? UniversityId { get; set; }
+        public int GradeLevelCount { get; set; }
     }
 }

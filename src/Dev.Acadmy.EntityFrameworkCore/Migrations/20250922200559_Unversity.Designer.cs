@@ -3,6 +3,7 @@ using System;
 using Dev.Acadmy.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Volo.Abp.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Dev.Acadmy.Migrations
 {
     [DbContext(typeof(AcadmyDbContext))]
-    partial class AcadmyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250922200559_Unversity")]
+    partial class Unversity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -859,9 +862,6 @@ namespace Dev.Acadmy.Migrations
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
-                    b.Property<Guid?>("GradeLevelId")
-                        .HasColumnType("uuid");
-
                     b.Property<DateTime?>("LastModificationTime")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("LastModificationTime");
@@ -881,8 +881,6 @@ namespace Dev.Acadmy.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CollegeId");
-
-                    b.HasIndex("GradeLevelId");
 
                     b.HasIndex("TermId");
 
@@ -913,9 +911,6 @@ namespace Dev.Acadmy.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
 
                     b.Property<DateTime?>("LastModificationTime")
                         .HasColumnType("timestamp without time zone")
@@ -2898,19 +2893,15 @@ namespace Dev.Acadmy.Migrations
 
             modelBuilder.Entity("Dev.Acadmy.Universites.Subject", b =>
                 {
-                    b.HasOne("Dev.Acadmy.Universites.College", null)
+                    b.HasOne("Dev.Acadmy.Universites.College", "College")
                         .WithMany("Subjects")
                         .HasForeignKey("CollegeId");
-
-                    b.HasOne("Dev.Acadmy.Universites.GradeLevel", "GradeLevel")
-                        .WithMany("Subjectls")
-                        .HasForeignKey("GradeLevelId");
 
                     b.HasOne("Dev.Acadmy.Universites.Term", "Term")
                         .WithMany("Subjects")
                         .HasForeignKey("TermId");
 
-                    b.Navigation("GradeLevel");
+                    b.Navigation("College");
 
                     b.Navigation("Term");
                 });
@@ -3100,11 +3091,6 @@ namespace Dev.Acadmy.Migrations
                     b.Navigation("GradeLevels");
 
                     b.Navigation("Subjects");
-                });
-
-            modelBuilder.Entity("Dev.Acadmy.Universites.GradeLevel", b =>
-                {
-                    b.Navigation("Subjectls");
                 });
 
             modelBuilder.Entity("Dev.Acadmy.Universites.Subject", b =>

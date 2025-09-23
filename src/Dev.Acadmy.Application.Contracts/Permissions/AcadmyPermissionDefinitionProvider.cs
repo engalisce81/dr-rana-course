@@ -107,6 +107,12 @@ public class AcadmyPermissionDefinitionProvider : PermissionDefinitionProvider
         courseInfos.AddChild(AcadmyPermissions.CourseInfos.Edit, L("Permission:CourseInfos.Edit"));
         courseInfos.AddChild(AcadmyPermissions.CourseInfos.Delete, L("Permission:CourseInfos.Delete"));
         courseInfos.AddChild(AcadmyPermissions.CourseInfos.View, L("Permission:CourseInfos.View"));
+
+        // Universities
+        var universities = group.AddPermission(AcadmyPermissions.Universites.Default, L("Permission:Universites"));
+        universities.AddChild(AcadmyPermissions.Universites.Create, L("Permission:Universites.Create"));
+        universities.AddChild(AcadmyPermissions.Universites.Edit, L("Permission:Universites.Edit"));
+        universities.AddChild(AcadmyPermissions.Universites.Delete, L("Permission:Universites.Delete"));
     }
 
     private static LocalizableString L(string name)

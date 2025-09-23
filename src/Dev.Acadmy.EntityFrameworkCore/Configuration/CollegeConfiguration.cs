@@ -3,8 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 using Volo.Abp.EntityFrameworkCore.Modeling;
 using Dev.Acadmy;
-using Dev.Acadmy.Colleges;
-
+using Dev.Acadmy.Universites;
 namespace Dev.Acadmy.Configuration
 {
     public class CollegeConfiguration : IEntityTypeConfiguration<College>

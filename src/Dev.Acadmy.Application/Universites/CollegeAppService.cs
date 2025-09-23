@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 
-namespace Dev.Acadmy.Colleges
+namespace Dev.Acadmy.Universites
 {
     public class CollegeAppService :ApplicationService
     {
@@ -31,7 +31,11 @@ namespace Dev.Acadmy.Colleges
         [Authorize(AcadmyPermissions.Colleges.Delete)]
         public async Task DeleteAsync(Guid id) => await _collegeManager.DeleteAsync(id);
         [AllowAnonymous]
-        public async Task<PagedResultDto<LookupDto>> GetCollegesListAsync() => await _collegeManager.GetCollegesListAsync();
+        public async Task<PagedResultDto<LookupDto>> GetCollegesListAsync(Guid universityId) => await _collegeManager.GetCollegesListAsync(universityId);
+        [AllowAnonymous]
+        public async Task<PagedResultDto<LookupDto>> GetGradeLevelListAsync(Guid collegeId) => await _collegeManager.GetGradeLevelListAsync(collegeId);
+        [AllowAnonymous]
+        public async Task<PagedResultDto<LookupDto>> GetTermListAsync() => await _collegeManager.GetTermListAsync();
 
     }
 }

@@ -1,25 +1,21 @@
 ﻿using AutoMapper;
-using Dev.Acadmy.Subjects;
-using Dev.Acadmy.Quizzes;
 using Dev.Acadmy.Response;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Identity;
 using Volo.Abp.Users;
-using Dev.Acadmy.Subjects;
 using Dev.Acadmy.LookUp;
-using Dev.Acadmy.Colleges;
 using Volo.Abp.Data;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp;
+using System.Linq.Dynamic.Core;
 
-namespace Dev.Acadmy.Subjects
+namespace Dev.Acadmy.Universites
 {
     public class SubjectManager : DomainService
     {
@@ -85,11 +81,15 @@ namespace Dev.Acadmy.Subjects
         {
             var currentUser = await _userRepository.GetAsync(_currentUser.GetId());
             var collegeId = currentUser.GetProperty<Guid?>(SetPropConsts.CollegeId);
-            if(collegeId == null) { throw new UserFriendlyException("not found College"); }
-            var subjects =await (await _collegeRepository.GetQueryableAsync()).Where(x=>x.Id == collegeId).Include(x=>x.Subjects).SelectMany(x=>x.Subjects).ToListAsync();
-            if(subjects == null || subjects.Count() == 0) return new PagedResultDto<LookupDto>(0, new List<LookupDto>());
+            var gradeLevelId = currentUser.GetProperty<Guid?>(SetPropConsts.GradeLevelId);
+            if (collegeId == null || collegeId == Guid.Empty)throw new UserFriendlyException("College not found");
+            var queryable = await _subjectRepository.GetQueryableAsync();
+            queryable = queryable.Where(s => s.GradeLevelId == gradeLevelId && s.GradeLevel.CollegeId == collegeId);
+            var subjects = await queryable.ToListAsync();
+            if (subjects == null || !subjects.Any())return new PagedResultDto<LookupDto>(0, new List<LookupDto>());
             var subjectDtos = _mapper.Map<List<LookupDto>>(subjects);
             return new PagedResultDto<LookupDto>(subjectDtos.Count, subjectDtos);
         }
+
     }
 }

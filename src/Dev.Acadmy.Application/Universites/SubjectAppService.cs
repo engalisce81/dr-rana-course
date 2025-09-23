@@ -1,5 +1,4 @@
-﻿using Dev.Acadmy.Subjects;
-using Dev.Acadmy.LookUp;
+﻿using Dev.Acadmy.LookUp;
 using Dev.Acadmy.Permissions;
 using Dev.Acadmy.Response;
 using Microsoft.AspNetCore.Authorization;
@@ -11,7 +10,7 @@ using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 
-namespace Dev.Acadmy.Subjects
+namespace Dev.Acadmy.Universites
 {
     public class SubjectAppService :ApplicationService
     {

@@ -1,17 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
-using Dev.Acadmy.Colleges;
 using Volo.Abp.Domain.Entities.Auditing;
 
-namespace Dev.Acadmy.Subjects
+namespace Dev.Acadmy.Universites
 {
     public  class Subject : AuditedAggregateRoot<Guid>  
     {
         public string Name { get; set; }
-        public Guid? CollegeId { get; set; }
-        [ForeignKey(nameof(CollegeId))]
-        public College? College { get; set; }
+        public Guid? TermId { get; set;}
+        public Guid? GradeLevelId { get; set;}
+        [ForeignKey(nameof(GradeLevelId))]
+        public GradeLevel? GradeLevel{ get; set;}
+        [ForeignKey(nameof(TermId))]
+        public Term? Term { get; set;}
         public ICollection<Courses.Course> Courses { get; set; } = new List<Courses.Course>();
     }
 }

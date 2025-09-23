@@ -1,12 +1,10 @@
 ﻿
 using Dev.Acadmy.Chapters;
-using Dev.Acadmy.Colleges;
 using Dev.Acadmy.Questions;
-using Dev.Acadmy.Subjects;
+using Dev.Acadmy.Universites;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Security.Cryptography.X509Certificates;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.Identity;
 

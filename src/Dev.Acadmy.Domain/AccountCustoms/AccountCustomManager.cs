@@ -2,7 +2,7 @@
 using Dev.Acadmy.AccountTypes;
 using Dev.Acadmy.LookUp;
 using Dev.Acadmy.Response;
-using Dev.Acadmy.Subjects;
+using Dev.Acadmy.Universites;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -22,8 +22,15 @@ namespace Dev.Acadmy.AccountCustoms
         private readonly IRepository<AccountType, Guid> _accountTypeRepository;
         private readonly IIdentityRoleRepository _roleRepository;
         private readonly IRepository<Subject, Guid> _subjectRepository;
-        public AccountCustomManager(IRepository<Subject, Guid> subjectRepository, IIdentityRoleRepository roleRepository, IIdentityUserRepository userRepository , IRepository<AccountType, Guid> accountTypeRepository , IdentityUserManager userManager) 
+        private readonly IRepository<College, Guid> _collegeRepository;
+        private readonly IRepository<University ,Guid> _universityRepository;
+        private readonly IRepository<GradeLevel , Guid> _gradeLevelRepository;
+        private readonly IRepository<Term ,Guid > _termRepository;
+        public AccountCustomManager(IRepository<Term, Guid> termRepository, IRepository<GradeLevel, Guid> gradeLevelRepository, IRepository<University, Guid> universityRepository, IRepository<College, Guid> collegeRepository, IRepository<Subject, Guid> subjectRepository, IIdentityRoleRepository roleRepository, IIdentityUserRepository userRepository , IRepository<AccountType, Guid> accountTypeRepository , IdentityUserManager userManager) 
         {
+            _gradeLevelRepository = gradeLevelRepository;
+            _universityRepository = universityRepository;
+            _collegeRepository = collegeRepository;
             _subjectRepository = subjectRepository;
             _roleRepository = roleRepository;
             _userManager = userManager;
@@ -40,6 +47,7 @@ namespace Dev.Acadmy.AccountCustoms
         
         public async Task<ResponseApi<LookupDto>> RegisterAsync(RegistercustomDto input)
         {
+            await CheckEntity(input);
             if (await _userRepository.FindByNormalizedEmailAsync(input.UserName.ToUpper()) != null) throw new UserFriendlyException("The Email or User Name Already Exist");
             var user = new IdentityUser(Guid.NewGuid(), input.UserName, input.UserName);
             var accountType = await _accountTypeRepository.FirstOrDefaultAsync(x=>x.Key == input.AccountTypeKey);   
@@ -49,7 +57,15 @@ namespace Dev.Acadmy.AccountCustoms
             user.Name = input.FullName;
             user.SetProperty(SetPropConsts.CollegeId, input.CollegeId);
             user.SetProperty(SetPropConsts.Gender,input.Gender);
-            if (accountType.Key == (int)AccountTypeKey.Student)  user.SetProperty(SetPropConsts.StudentMobileIP, input.StudentMobileIP);
+           user.SetProperty(SetPropConsts.UniversityId, input.UniversityId);
+            user.SetProperty(SetPropConsts.GradeLevelId, input.GradeLevelId);
+            if (accountType.Key == (int)AccountTypeKey.Student)
+            {
+                user.SetProperty(SetPropConsts.StudentMobileIP, input.StudentMobileIP);
+                var currentTerm = await _termRepository.FirstOrDefaultAsync(x => x.IsActive);
+                if(currentTerm != null)user.SetProperty(SetPropConsts.TermId, currentTerm.Id);
+
+            }
             user.SetIsActive(true);
             var result = await _userManager.CreateAsync(user, input.Password);
             if (result.Succeeded)
@@ -74,6 +90,14 @@ namespace Dev.Acadmy.AccountCustoms
             if (accountType == null) new UserFriendlyException($"Not Found Account Type With Id{accountTypeId}");
             if(accountType.Key ==(int) AccountTypeKey.Teacher) return await _roleRepository.FindByNormalizedNameAsync(RoleConsts.Teacher.ToUpperInvariant());
             else return await _roleRepository.FindByNormalizedNameAsync(RoleConsts.Student.ToUpperInvariant());
+        }
+
+        private async Task CheckEntity(RegistercustomDto input)
+        {
+            var university = await _universityRepository.GetAsync(input.UniversityId);
+            var college = await _collegeRepository.GetAsync(input.CollegeId);
+            var gradeLevel = await _gradeLevelRepository.GetAsync(input.GradeLevelId);
+
         }
 
     }

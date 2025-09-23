@@ -1,7 +1,5 @@
-﻿using Dev.Acadmy.EntityFrameworkCore;
-using Dev.Acadmy.AccountTypes;
+﻿using Dev.Acadmy.AccountTypes;
 using Dev.Acadmy.Chapters;
-using Dev.Acadmy.Colleges;
 using Dev.Acadmy.Lectures;
 using Dev.Acadmy.MediaItems;
 using Dev.Acadmy.Questions;
@@ -20,8 +18,8 @@ using Volo.Abp.PermissionManagement.EntityFrameworkCore;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
-using Dev.Acadmy.Subjects;
 using Dev.Acadmy.Courses;
+using Dev.Acadmy.Universites;
 
 namespace Dev.Acadmy.EntityFrameworkCore;
 
@@ -78,6 +76,9 @@ public class AcadmyDbContext :
     public DbSet<AccountType> AccountTypes { get; set; }
     public DbSet<Subject> Subjects { get; set; }
     public DbSet<CourseInfo> CourseInfos { get; set; }
+    public DbSet<Term> Terms { get; set; }  
+    public DbSet<University> Universities { get; set; } 
+    public DbSet<GradeLevel> GradeLevels { get; set; }
 
     public AcadmyDbContext(DbContextOptions<AcadmyDbContext> options)
         : base(options)

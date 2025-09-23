@@ -15,6 +15,15 @@ public static class AcadmyPermissions
     }
     
 
+    public static class Universites
+    {
+        public const string Default = GroupName + ".Universites";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+        public const string View = Default + ".View";
+        public const string Publish = Default + ".Publish";
+    }
     public static class CourseInfos
     {
         public const string Default = GroupName + ".CourseInfos";

@@ -116,26 +116,37 @@ namespace Dev.Acadmy.Courses
             return new PagedResultDto<LookupDto>(totalCount, courseDtos);
         }
 
-        public async Task<PagedResultDto<CourseInfoHomeDto>> GetCoursesInfoListAsync(int pageNumber,int pageSize,string? search,bool alreadyJoin,Guid userId,Guid? subjectId)
+        public async Task<PagedResultDto<CourseInfoHomeDto>> GetCoursesInfoListAsync(
+        int pageNumber,
+        int pageSize,
+        string? search,
+        bool alreadyJoin,
+        Guid userId,
+        Guid? subjectId)
         {
             var currentUser = await _userRepository.GetAsync(_currentUser.GetId());
             var collegeId = currentUser.GetProperty<Guid?>(SetPropConsts.CollegeId);
+            var termId = currentUser.GetProperty<Guid?>(SetPropConsts.TermId);
+            var gradeLevelId = currentUser.GetProperty<Guid?>(SetPropConsts.GradeLevelId);
             if (collegeId == null || collegeId == Guid.Empty) return new PagedResultDto<CourseInfoHomeDto>(0, new List<CourseInfoHomeDto>());
             var courseStudents = await (await _courseStudentRepository.GetQueryableAsync()).Where(x => x.UserId == currentUser.Id).ToListAsync();
             var alreadyJoinCourses = courseStudents.Where(x => x.IsSubscibe).Select(x => x.CourseId).ToList();
             var alreadyRequestCourses = courseStudents.Select(x => x.CourseId).ToList();
             var queryable = await _courseRepository.GetQueryableAsync();
-            if (!string.IsNullOrWhiteSpace(search)) queryable = queryable.Where(c =>c.Name.Contains(search) || c.Description.Contains(search));
-            if (subjectId.HasValue)  queryable = queryable.Where(c => c.SubjectId == subjectId.Value);
-            queryable = queryable.Where(c => c.CollegeId == collegeId.Value);
-            if (alreadyJoin)  queryable = queryable.Where(c => alreadyJoinCourses.Contains(c.Id));
+            if (!string.IsNullOrWhiteSpace(search)) queryable = queryable.Where(c =>c.Name.Contains(search) ||c.Description.Contains(search) ||c.Subject.Name.Contains(search));
+            queryable = queryable.Where(c => c.CollegeId == collegeId.Value && (!subjectId.HasValue || c.SubjectId == subjectId.Value) &&(!termId.HasValue || c.Subject.TermId == termId.Value) && (!gradeLevelId.HasValue || c.Subject.GradeLevelId == gradeLevelId.Value));
+            if (alreadyJoin) queryable = queryable.Where(c => alreadyJoinCourses.Contains(c.Id));
             var totalCount = await queryable.CountAsync();
-            var courses = await queryable.Include(c => c.User).Include(x=>x.Subject).Include(c => c.College).Include(c => c.Chapters).OrderByDescending(c => c.CreationTime)
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            var mediaItems = new Dictionary<Guid, MediaItem>(); foreach (var course in courses) { var media = await _mediaItemManager.GetAsync(course.Id); if (media != null) mediaItems[course.Id] = media; }
+            var courses = await queryable.Include(c => c.User).Include(c => c.Subject).Include(c => c.College).Include(c => c.Chapters).OrderByDescending(c => c.CreationTime).Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+            var mediaItems = new Dictionary<Guid, MediaItem>();
+            foreach (var course in courses)
+            {
+                var media = await _mediaItemManager.GetAsync(course.Id);
+                if (media != null)
+                {
+                    mediaItems[course.Id] = media;
+                }
+            }
             var courseDtos = courses.Select(course => new CourseInfoHomeDto
             {
                 Id = course.Id,
@@ -150,12 +161,14 @@ namespace Dev.Acadmy.Courses
                 AlreadyJoin = alreadyJoinCourses.Contains(course.Id),
                 AlreadyRequest = alreadyRequestCourses.Contains(course.Id),
                 SubjectId = course.Subject?.Id,
-                SubjectName = course.Subject?.Name?? "",
+                SubjectName = course.Subject?.Name ?? "",
                 ChapterCount = course.Chapters.Count,
                 DurationInWeeks = course.DurationInDays / 7
             }).ToList();
+
             return new PagedResultDto<CourseInfoHomeDto>(totalCount, courseDtos);
         }
+
 
         public async Task<ResponseApi<CourseInfoHomeDto>> GetCoursesInfoAsync( Guid courseId)
         {
