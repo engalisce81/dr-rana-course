@@ -28,6 +28,7 @@ namespace Dev.Acadmy.AccountCustoms
         private readonly IRepository<Term ,Guid > _termRepository;
         public AccountCustomManager(IRepository<Term, Guid> termRepository, IRepository<GradeLevel, Guid> gradeLevelRepository, IRepository<University, Guid> universityRepository, IRepository<College, Guid> collegeRepository, IRepository<Subject, Guid> subjectRepository, IIdentityRoleRepository roleRepository, IIdentityUserRepository userRepository , IRepository<AccountType, Guid> accountTypeRepository , IdentityUserManager userManager) 
         {
+            _termRepository = termRepository;
             _gradeLevelRepository = gradeLevelRepository;
             _universityRepository = universityRepository;
             _collegeRepository = collegeRepository;
