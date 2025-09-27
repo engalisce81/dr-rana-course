@@ -139,17 +139,32 @@ namespace Dev.Acadmy.Quizzes
             return new ResponseApi<QuizResultDto>{Data= new QuizResultDto{QuizId = quiz.Id,TotalScore = totalScore,StudentScore = studentScore},Success= true,Message="Correct Success" };
         }
 
-        public async Task MarkQuizAsync(Guid quizId,int score)
+        public async Task MarkQuizAsync(Guid quizId, int score)
         {
-            var currentUser= await _userRepository.GetAsync(_currentUser.GetId());
-            var quizStudent = new QuizStudent
+            var currentUser = await _userRepository.GetAsync(_currentUser.GetId());
+
+            var existingQuizStudent = await _quizStudentRepository
+                .FirstOrDefaultAsync(x => x.UserId == currentUser.Id && x.QuizId == quizId);
+
+            if (existingQuizStudent != null)
             {
-                UserId = currentUser.Id,
-                QuizId = quizId,
-                Score = score
-            };
-            await _quizStudentRepository.InsertAsync(quizStudent);
+                // Update existing record
+                existingQuizStudent.Score = score;
+                await _quizStudentRepository.UpdateAsync(existingQuizStudent);
+            }
+            else
+            {
+                // Insert new record
+                var quizStudent = new QuizStudent
+                {
+                    UserId = currentUser.Id,
+                    QuizId = quizId,
+                    Score = score
+                };
+                await _quizStudentRepository.InsertAsync(quizStudent);
+            }
         }
+
 
 
 
