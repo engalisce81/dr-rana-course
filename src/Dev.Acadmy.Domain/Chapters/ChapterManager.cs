@@ -98,9 +98,7 @@ namespace Dev.Acadmy.Chapters
         {
             if (pageNumber <= 0) pageNumber = 1;
             if (pageSize <= 0) pageSize = 10;
-
             var currentUser = await _userRepository.GetAsync(_currentUser.GetId());
-
             // نجيب كل الكويزات اللي الطالب جاوبها قبل كده
             var answeredQuizIds = await (await _quizStudentRepository.GetQueryableAsync())
                 .Where(qs => qs.UserId == currentUser.Id)
@@ -108,7 +106,8 @@ namespace Dev.Acadmy.Chapters
                 .ToListAsync();
 
             var queryable = await _chapterRepository.GetQueryableAsync();
-            var query = queryable.Include(x=> x.Course)
+
+            var query = queryable.Include(x => x.Course)
                 .Include(c => c.Lectures)
                     .ThenInclude(l => l.Quiz)
                         .ThenInclude(q => q.Questions)
@@ -122,32 +121,48 @@ namespace Dev.Acadmy.Chapters
                 .Take(pageSize)
                 .ToListAsync();
 
-            var chapterInfoDtos = chapters.Select(c => new CourseChaptersDto
+            // بناء DTOs بطريقة Async
+            var chapterInfoDtos = new List<CourseChaptersDto>();
+
+            foreach (var c in chapters)
             {
-                CourseId = c.CourseId,
-                CourseName = c.Course.Name,
-                ChapterId = c.Id,
-                ChapterName = c.Name,
-                LectureCount = c.Lectures.Where(x => x.IsVisible).Count(),
-                Lectures = c.Lectures.Where(x => x.IsVisible).Select(l => new LectureInfoDto
+                var lectureDtos = new List<LectureInfoDto>();
+
+                foreach (var l in c.Lectures.Where(x => x.IsVisible))
                 {
-                    LectureId = l.Id,
-                    Title = l.Title,
-                    Content = l.Content,
-                    VideoUrl = l.VideoUrl,
-                    PdfUrl =(_mediaItemManager.GetAsync(l.Id,false).Result).Url,
-                    Quiz = new QuizInfoDto
+                    var media = await _mediaItemManager.GetAsync(l.Id, true);
+
+                    lectureDtos.Add(new LectureInfoDto
                     {
-                        QuizId = l.Quiz.Id,
-                        Title = l.Quiz.Title,
-                        QuestionsCount = l.Quiz.Questions.Count,
-                        AlreadyAnswer = answeredQuizIds.Contains(l.Quiz.Id) 
-                    }
-                }).ToList()
-            }).ToList();
+                        LectureId = l.Id,
+                        Title = l.Title,
+                        Content = l.Content,
+                        VideoUrl = l.VideoUrl,
+                        PdfUrl = media?.Url??"", // بدل .Result
+                        Quiz = new QuizInfoDto
+                        {
+                            QuizId = l.Quiz.Id,
+                            Title = l.Quiz.Title,
+                            QuestionsCount = l.Quiz.Questions.Count,
+                            AlreadyAnswer = answeredQuizIds.Contains(l.Quiz.Id)
+                        }
+                    });
+                }
+
+                chapterInfoDtos.Add(new CourseChaptersDto
+                {
+                    CourseId = c.CourseId,
+                    CourseName = c.Course.Name,
+                    ChapterId = c.Id,
+                    ChapterName = c.Name,
+                    LectureCount = lectureDtos.Count,
+                    Lectures = lectureDtos
+                });
+            }
 
             return new PagedResultDto<CourseChaptersDto>(totalCount, chapterInfoDtos);
         }
+
 
     }
 }

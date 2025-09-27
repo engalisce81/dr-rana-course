@@ -129,45 +129,26 @@ namespace Dev.Acadmy.Quizzes
                 }
                 totalScore += question.Score;
             }
-            var quizStudent = new QuizStudent
-            {
-                UserId = userId,
-                QuizId = quiz.Id,
-                Score = (int)studentScore
-            };
+            var quizStudent = new QuizStudent{UserId = userId,QuizId = quiz.Id, Score = (int)studentScore};
             await _quizStudentRepository.InsertAsync(quizStudent);
             return new ResponseApi<QuizResultDto>{Data= new QuizResultDto{QuizId = quiz.Id,TotalScore = totalScore,StudentScore = studentScore},Success= true,Message="Correct Success" };
         }
 
-        public async Task MarkQuizAsync(Guid quizId, int score)
+        public async Task<ResponseApi<string>> MarkQuizAsync(Guid quizId, int score)
         {
             var currentUser = await _userRepository.GetAsync(_currentUser.GetId());
-
-            var existingQuizStudent = await _quizStudentRepository
-                .FirstOrDefaultAsync(x => x.UserId == currentUser.Id && x.QuizId == quizId);
-
+            var existingQuizStudent = await _quizStudentRepository.FirstOrDefaultAsync(x => x.UserId == currentUser.Id && x.QuizId == quizId);
             if (existingQuizStudent != null)
             {
-                // Update existing record
                 existingQuizStudent.Score = score;
                 await _quizStudentRepository.UpdateAsync(existingQuizStudent);
             }
             else
             {
-                // Insert new record
-                var quizStudent = new QuizStudent
-                {
-                    UserId = currentUser.Id,
-                    QuizId = quizId,
-                    Score = score
-                };
+                var quizStudent = new QuizStudent{UserId = currentUser.Id,QuizId = quizId,Score = score};
                 await _quizStudentRepository.InsertAsync(quizStudent);
             }
+            return new ResponseApi<string> { Data = $"save score {score}", Success = true, Message = "save success" };
         }
-
-
-
-
-
     }
 }
