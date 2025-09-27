@@ -44,7 +44,7 @@ namespace Dev.Acadmy.Courses
             var course = await _courseRepository.FirstOrDefaultAsync(x => x.Id == id);
             if (course == null) return new ResponseApi<CourseDto> { Data = null, Success = false, Message = "Not found Course" };
             var dto = _mapper.Map<CourseDto>(course);
-            var mediaItem = await _mediaItemManager.GetAsync(dto.Id ,true);
+            var mediaItem = await _mediaItemManager.GetAsync(dto.Id );
             dto.LogoUrl = mediaItem?.Url ?? "";
             return new ResponseApi<CourseDto> { Data = dto, Success = true, Message = "find succeess" };
         }
@@ -61,7 +61,7 @@ namespace Dev.Acadmy.Courses
             var courseDtos = _mapper.Map<List<CourseDto>>(courses);
             foreach (var courseDto in courseDtos)
             {
-                var mediaItem = await _mediaItemManager.GetAsync(courseDto.Id,true);
+                var mediaItem = await _mediaItemManager.GetAsync(courseDto.Id);
                 courseDto.LogoUrl = mediaItem?.Url??"";
             }
             return new PagedResultDto<CourseDto>(totalCount, courseDtos);
@@ -135,7 +135,7 @@ namespace Dev.Acadmy.Courses
             var mediaItems = new Dictionary<Guid, MediaItem>();
             foreach (var course in courses)
             {
-                var media = await _mediaItemManager.GetAsync(course.Id, true);
+                var media = await _mediaItemManager.GetAsync(course.Id);
                 if (media != null)
                 {
                     mediaItems[course.Id] = media;
@@ -172,7 +172,7 @@ namespace Dev.Acadmy.Courses
             var queryable = await _courseRepository.GetQueryableAsync();
             var course = await queryable.Include(c => c.User).Include(x => x.Subject).Include(x=>x.CourseInfos).Include(c => c.College).Include(c => c.Chapters).OrderByDescending(c => c.CreationTime).FirstOrDefaultAsync(x=>x.Id==courseId);
             if (course == null) { throw new UserFriendlyException("Course Not Found"); }
-            var media = await _mediaItemManager.GetAsync(courseId,true); 
+            var media = await _mediaItemManager.GetAsync(courseId); 
             var courseDto =  new CourseInfoHomeDto
             {
                 Id = course.Id,

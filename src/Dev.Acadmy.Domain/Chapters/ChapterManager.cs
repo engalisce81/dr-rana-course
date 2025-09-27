@@ -104,33 +104,26 @@ namespace Dev.Acadmy.Chapters
                 .Where(qs => qs.UserId == currentUser.Id)
                 .Select(qs => qs.QuizId)
                 .ToListAsync();
-
             var queryable = await _chapterRepository.GetQueryableAsync();
-
             var query = queryable.Include(x => x.Course)
                 .Include(c => c.Lectures)
                     .ThenInclude(l => l.Quiz)
                         .ThenInclude(q => q.Questions)
                 .Where(c => c.CourseId == courseId);
-
             var totalCount = await query.CountAsync();
-
             var chapters = await query
                 .OrderBy(c => c.CreationTime)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
-
-            // بناء DTOs بطريقة Async
             var chapterInfoDtos = new List<CourseChaptersDto>();
-
             foreach (var c in chapters)
             {
                 var lectureDtos = new List<LectureInfoDto>();
 
                 foreach (var l in c.Lectures.Where(x => x.IsVisible))
                 {
-                    var media = await _mediaItemManager.GetAsync(l.Id, true);
+                    var media = await _mediaItemManager.GetAsync(l.Id);
 
                     lectureDtos.Add(new LectureInfoDto
                     {
@@ -148,7 +141,6 @@ namespace Dev.Acadmy.Chapters
                         }
                     });
                 }
-
                 chapterInfoDtos.Add(new CourseChaptersDto
                 {
                     CourseId = c.CourseId,
@@ -159,7 +151,6 @@ namespace Dev.Acadmy.Chapters
                     Lectures = lectureDtos
                 });
             }
-
             return new PagedResultDto<CourseChaptersDto>(totalCount, chapterInfoDtos);
         }
 

@@ -68,7 +68,7 @@ namespace Dev.Acadmy.ProfileUsers
         private async Task<UserInfoDto> GetUserDataAsync()
         {
             var currentUser = await _userRepository.GetAsync(_currentUser.GetId());
-            var media = await _mediaItemManager.GetAsync(currentUser.Id, true);
+            var media = await _mediaItemManager.GetAsync(currentUser.Id);
             var collegeId = currentUser.GetProperty<Guid>(SetPropConsts.CollegeId);
             var accountTypeId = currentUser.GetProperty<Guid>(SetPropConsts.AccountTypeId);
             var universityId = currentUser.GetProperty<Guid>(SetPropConsts.UniversityId);
