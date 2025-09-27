@@ -9,7 +9,6 @@ namespace Dev.Acadmy.ProfileUsers
     public class UpdateProfielDto
     {
         public string? Name { get; set; }
-        public Guid? CollegeId { get; set; }
         public string? LogoUrl { get; set; }
     }
 }

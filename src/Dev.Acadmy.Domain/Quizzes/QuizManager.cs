@@ -10,6 +10,8 @@ using Volo.Abp.Domain.Services;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp;
 using Volo.Abp.Users;
+using Volo.Abp.Identity;
+using static Dev.Acadmy.Permissions.AcadmyPermissions;
 
 namespace Dev.Acadmy.Quizzes
 {
@@ -19,8 +21,10 @@ namespace Dev.Acadmy.Quizzes
         private readonly IMapper _mapper;
         private readonly IRepository<QuizStudent> _quizStudentRepository;
         private readonly ICurrentUser _currentUser;
-        public QuizManager(ICurrentUser currentUser, IRepository<QuizStudent> quizStudentRepository, IMapper mapper, IRepository<Quiz,Guid> quizRepository)
+        private readonly IIdentityUserRepository _userRepository;
+        public QuizManager(IIdentityUserRepository userRepository, ICurrentUser currentUser, IRepository<QuizStudent> quizStudentRepository, IMapper mapper, IRepository<Quiz,Guid> quizRepository)
         {
+            _userRepository = userRepository;
             _currentUser = currentUser;
             _quizRepository = quizRepository;
             _mapper = mapper;
@@ -134,6 +138,21 @@ namespace Dev.Acadmy.Quizzes
             await _quizStudentRepository.InsertAsync(quizStudent);
             return new ResponseApi<QuizResultDto>{Data= new QuizResultDto{QuizId = quiz.Id,TotalScore = totalScore,StudentScore = studentScore},Success= true,Message="Correct Success" };
         }
+
+        public async Task MarkQuizAsync(Guid quizId,int score)
+        {
+            var currentUser= await _userRepository.GetAsync(_currentUser.GetId());
+            var quizStudent = new QuizStudent
+            {
+                UserId = currentUser.Id,
+                QuizId = quizId,
+                Score = score
+            };
+            await _quizStudentRepository.InsertAsync(quizStudent);
+        }
+
+
+
 
     }
 }

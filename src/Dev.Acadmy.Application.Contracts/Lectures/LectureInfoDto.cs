@@ -8,6 +8,8 @@ namespace Dev.Acadmy.Lectures
         public string Title { get; set; }
         public string Content { get; set; }
         public string VideoUrl { get; set; }
+        public string? PdfUrl { get; set; }
+
         public QuizInfoDto Quiz { get; set; }
     }
 }

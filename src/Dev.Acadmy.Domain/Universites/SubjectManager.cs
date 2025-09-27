@@ -12,7 +12,6 @@ using Volo.Abp.Users;
 using Dev.Acadmy.LookUp;
 using Volo.Abp.Data;
 using Microsoft.EntityFrameworkCore;
-using Volo.Abp;
 using System.Linq.Dynamic.Core;
 
 namespace Dev.Acadmy.Universites
@@ -81,15 +80,14 @@ namespace Dev.Acadmy.Universites
         {
             var currentUser = await _userRepository.GetAsync(_currentUser.GetId());
             var collegeId = currentUser.GetProperty<Guid?>(SetPropConsts.CollegeId);
+            var termId = currentUser.GetProperty<Guid>(SetPropConsts.TermId);
             var gradeLevelId = currentUser.GetProperty<Guid?>(SetPropConsts.GradeLevelId);
-            if (collegeId == null || collegeId == Guid.Empty)throw new UserFriendlyException("College not found");
             var queryable = await _subjectRepository.GetQueryableAsync();
-            queryable = queryable.Where(s => s.GradeLevelId == gradeLevelId && s.GradeLevel.CollegeId == collegeId);
+            queryable = queryable.Include(x=>x.GradeLevel).Where(s => s.GradeLevelId == gradeLevelId && s.TermId == termId);
             var subjects = await queryable.ToListAsync();
             if (subjects == null || !subjects.Any())return new PagedResultDto<LookupDto>(0, new List<LookupDto>());
             var subjectDtos = _mapper.Map<List<LookupDto>>(subjects);
             return new PagedResultDto<LookupDto>(subjectDtos.Count, subjectDtos);
         }
-
     }
 }

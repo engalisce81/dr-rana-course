@@ -14,6 +14,7 @@ using Dev.Acadmy.Quizzes;
 using Dev.Acadmy.Response;
 using Dev.Acadmy.Questions;
 using Volo.Abp;
+using Dev.Acadmy.MediaItems;
 
 namespace Dev.Acadmy.Lectures
 {
@@ -25,8 +26,10 @@ namespace Dev.Acadmy.Lectures
         private readonly ICurrentUser _currentUser;
         private readonly QuizManager _quizManager;
         private readonly IRepository<Quiz ,Guid> _quizRepository;
-        public LectureManager(IRepository<Quiz,Guid> quizRepository, QuizManager quizManager, ICurrentUser currentUser, IIdentityUserRepository userRepository, IMapper mapper, IRepository<Lecture,Guid> lectureRepository)
+        private readonly MediaItemManager _mediaItemManager;
+        public LectureManager(MediaItemManager mediaItemManager, IRepository<Quiz,Guid> quizRepository, QuizManager quizManager, ICurrentUser currentUser, IIdentityUserRepository userRepository, IMapper mapper, IRepository<Lecture,Guid> lectureRepository)
         {
+            _mediaItemManager = mediaItemManager;
             _quizRepository = quizRepository;
             _quizManager = quizManager;
             _currentUser = currentUser;
@@ -62,7 +65,9 @@ namespace Dev.Acadmy.Lectures
             var quiz=await _quizManager.CreateAsync(new CreateUpdateQuizDto {CreaterId = _currentUser.GetId(), QuizTime = input.QuizTime, Title = input.Title+"Quiz" ,Description =input.Content});
             lecture.QuizId = quiz.Data.Id;
             var result = await _lectureRepository.InsertAsync(lecture);
+            var mediaItem = await _mediaItemManager.CreateAsync(new CreateUpdateMediaItemDto {IsImage=false ,RefId=result.Id,Url=input.PdfUrl });
             var dto = _mapper.Map<LectureDto>(result);
+            if(mediaItem != null ) dto.PdfUrl = mediaItem.Url;
             return new ResponseApi<LectureDto> { Data = dto, Success = true, Message = "save succeess" };
         }
 
@@ -83,6 +88,7 @@ namespace Dev.Acadmy.Lectures
                 lecture.QuizId = quizd.Data.Id;
             }
             var result = await _lectureRepository.UpdateAsync(lecture);
+            var mediaItemDB = await _mediaItemManager.UpdateAsync(id ,new CreateUpdateMediaItemDto { IsImage=false , RefId = result.Id ,Url = input.PdfUrl});
             var dto = _mapper.Map<LectureDto>(result);
             return new ResponseApi<LectureDto> { Data = dto, Success = true, Message = "update succeess" };
         }
@@ -91,6 +97,7 @@ namespace Dev.Acadmy.Lectures
         {
             var lecture = await _lectureRepository.FirstOrDefaultAsync(x => x.Id == id);
             if (lecture == null) return new ResponseApi<bool> { Data = false, Success = false, Message = "Not found lecture" };
+            await _mediaItemManager.DeleteAsync(id);
             await _lectureRepository.DeleteAsync(lecture);
             var quiz = await _quizManager.GetAsync(lecture.QuizId);
             if(quiz.Data != null) await _quizManager.DeleteAsync(quiz.Data.Id);

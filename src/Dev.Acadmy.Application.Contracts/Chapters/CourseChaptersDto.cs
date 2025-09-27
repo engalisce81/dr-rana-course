@@ -11,6 +11,9 @@ namespace Dev.Acadmy.Chapters
     {
         public Guid ChapterId { get; set; }
         public string ChapterName { get; set; }
+        public Guid CourseId { get; set; }
+        public string CourseName { get; set; }
+        public int LectureCount { get; set; }
         public List<LectureInfoDto> Lectures { get; set; } = new();
     }
 }

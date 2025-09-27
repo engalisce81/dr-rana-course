@@ -98,7 +98,6 @@ namespace Dev.Acadmy.AccountCustoms
             var university = await _universityRepository.GetAsync(input.UniversityId);
             var college = await _collegeRepository.GetAsync(input.CollegeId);
             var gradeLevel = await _gradeLevelRepository.GetAsync(input.GradeLevelId);
-
         }
 
     }

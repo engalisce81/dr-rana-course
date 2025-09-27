@@ -32,5 +32,7 @@ namespace Dev.Acadmy.Lectures
         public async Task<ResponseApi<QuizDetailsDto>> GetQuizDetailsAsync(Guid quizId) => await _lectureManager.GetQuizDetailsAsync(quizId);
         [Authorize]
         public async Task<ResponseApi<QuizResultDto>> CorrectQuizAsync(QuizAnswerDto input) => await _quizManager.CorrectQuizAsync(input);
+        [Authorize]
+        public async Task MarkQuizAsync(Guid quizId, int score) => await _quizManager.MarkQuizAsync(quizId, score);
     }
 }

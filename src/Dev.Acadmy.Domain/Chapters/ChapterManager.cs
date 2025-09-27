@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Dev.Acadmy.Lectures;
 using Dev.Acadmy.LookUp;
+using Dev.Acadmy.MediaItems;
 using Dev.Acadmy.Quizzes;
 using Dev.Acadmy.Response;
 using Microsoft.EntityFrameworkCore;
@@ -24,8 +25,10 @@ namespace Dev.Acadmy.Chapters
         private readonly IIdentityUserRepository _userRepository;
         private readonly ICurrentUser _currentUser;
         private readonly IRepository<QuizStudent, Guid> _quizStudentRepository;
-        public ChapterManager(IRepository<QuizStudent, Guid> quizStudentRepository, ICurrentUser currentUser, IIdentityUserRepository userRepository, IMapper mapper, IRepository<Chapter> chapterRepository)
+        private readonly MediaItemManager _mediaItemManager;
+        public ChapterManager(MediaItemManager mediaItemManager, IRepository<QuizStudent, Guid> quizStudentRepository, ICurrentUser currentUser, IIdentityUserRepository userRepository, IMapper mapper, IRepository<Chapter> chapterRepository)
         {
+            _mediaItemManager = mediaItemManager;
             _quizStudentRepository = quizStudentRepository;
             _currentUser = currentUser;
             _userRepository = userRepository;
@@ -105,7 +108,7 @@ namespace Dev.Acadmy.Chapters
                 .ToListAsync();
 
             var queryable = await _chapterRepository.GetQueryableAsync();
-            var query = queryable
+            var query = queryable.Include(x=> x.Course)
                 .Include(c => c.Lectures)
                     .ThenInclude(l => l.Quiz)
                         .ThenInclude(q => q.Questions)
@@ -121,14 +124,18 @@ namespace Dev.Acadmy.Chapters
 
             var chapterInfoDtos = chapters.Select(c => new CourseChaptersDto
             {
+                CourseId = c.CourseId,
+                CourseName = c.Course.Name,
                 ChapterId = c.Id,
                 ChapterName = c.Name,
+                LectureCount = c.Lectures.Where(x => x.IsVisible).Count(),
                 Lectures = c.Lectures.Where(x => x.IsVisible).Select(l => new LectureInfoDto
                 {
                     LectureId = l.Id,
                     Title = l.Title,
                     Content = l.Content,
                     VideoUrl = l.VideoUrl,
+                    PdfUrl =(_mediaItemManager.GetAsync(l.Id,false).Result).Url,
                     Quiz = new QuizInfoDto
                     {
                         QuizId = l.Quiz.Id,

@@ -23,7 +23,7 @@ namespace Dev.Acadmy.MediaItems
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public async Task<MediaItem?> GetAsync(Guid refId) => await _mediaItemRepository.FirstOrDefaultAsync(x => x.RefId == refId);
+        public async Task<MediaItem?> GetAsync(Guid refId ,bool isImage) => await _mediaItemRepository.FirstOrDefaultAsync(x => x.RefId == refId && x.IsImage ==isImage);
 
 
         public async Task<MediaItem> CreateAsync(CreateUpdateMediaItemDto input)

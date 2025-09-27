@@ -44,7 +44,7 @@ namespace Dev.Acadmy.Courses
             var course = await _courseRepository.FirstOrDefaultAsync(x => x.Id == id);
             if (course == null) return new ResponseApi<CourseDto> { Data = null, Success = false, Message = "Not found Course" };
             var dto = _mapper.Map<CourseDto>(course);
-            var mediaItem = await _mediaItemManager.GetAsync(dto.Id);
+            var mediaItem = await _mediaItemManager.GetAsync(dto.Id ,true);
             dto.LogoUrl = mediaItem?.Url ?? "";
             return new ResponseApi<CourseDto> { Data = dto, Success = true, Message = "find succeess" };
         }
@@ -61,7 +61,7 @@ namespace Dev.Acadmy.Courses
             var courseDtos = _mapper.Map<List<CourseDto>>(courses);
             foreach (var courseDto in courseDtos)
             {
-                var mediaItem = await _mediaItemManager.GetAsync(courseDto.Id);
+                var mediaItem = await _mediaItemManager.GetAsync(courseDto.Id,true);
                 courseDto.LogoUrl = mediaItem?.Url??"";
             }
             return new PagedResultDto<CourseDto>(totalCount, courseDtos);
@@ -72,7 +72,7 @@ namespace Dev.Acadmy.Courses
             var course = _mapper.Map<Course>(input);
             course.UserId=_currentUser.GetId(); 
             var result = await _courseRepository.InsertAsync(course);
-            await _mediaItemManager.CreateAsync(new CreateUpdateMediaItemDto { Url =input.LogoUrl, RefId = result.Id});
+            await _mediaItemManager.CreateAsync(new CreateUpdateMediaItemDto { Url =input.LogoUrl, RefId = result.Id,IsImage=true});
             await _questionBankManager.CreateAsync(new CreateUpdateQuestionBankDto {CreatorId =result.UserId, CourseId = result.Id, Name = $"{result.Name} Question Bank" });
             var dto = _mapper.Map<CourseDto>(result);
             return new ResponseApi<CourseDto> { Data = dto, Success = true, Message = "save succeess" };
@@ -84,7 +84,7 @@ namespace Dev.Acadmy.Courses
             if (courseDB == null) return new ResponseApi<CourseDto> { Data = null, Success = false, Message = "Not found Course" };
             var course = _mapper.Map(input, courseDB);
             var result = await _courseRepository.UpdateAsync(course);
-            await _mediaItemManager.UpdateAsync(id, new CreateUpdateMediaItemDto { Url = input.LogoUrl, RefId = result.Id });
+            await _mediaItemManager.UpdateAsync(id, new CreateUpdateMediaItemDto { Url = input.LogoUrl, RefId = result.Id ,IsImage=true });
             var questionBank = await _questionBankManager.GetByCourse(id);
             if(questionBank !=null) await _questionBankManager.UpdateAsync(questionBank.Id, new CreateUpdateQuestionBankDto { CreatorId=result.UserId,CourseId = result.Id, Name = $"{result.Name} Question Bank" });
             var dto = _mapper.Map<CourseDto>(result);
@@ -116,13 +116,7 @@ namespace Dev.Acadmy.Courses
             return new PagedResultDto<LookupDto>(totalCount, courseDtos);
         }
 
-        public async Task<PagedResultDto<CourseInfoHomeDto>> GetCoursesInfoListAsync(
-        int pageNumber,
-        int pageSize,
-        string? search,
-        bool alreadyJoin,
-        Guid userId,
-        Guid? subjectId)
+        public async Task<PagedResultDto<CourseInfoHomeDto>> GetCoursesInfoListAsync(int pageNumber,int pageSize,string? search,bool alreadyJoin,Guid userId, Guid? subjectId)
         {
             var currentUser = await _userRepository.GetAsync(_currentUser.GetId());
             var collegeId = currentUser.GetProperty<Guid?>(SetPropConsts.CollegeId);
@@ -141,7 +135,7 @@ namespace Dev.Acadmy.Courses
             var mediaItems = new Dictionary<Guid, MediaItem>();
             foreach (var course in courses)
             {
-                var media = await _mediaItemManager.GetAsync(course.Id);
+                var media = await _mediaItemManager.GetAsync(course.Id, true);
                 if (media != null)
                 {
                     mediaItems[course.Id] = media;
@@ -165,7 +159,6 @@ namespace Dev.Acadmy.Courses
                 ChapterCount = course.Chapters.Count,
                 DurationInWeeks = course.DurationInDays / 7
             }).ToList();
-
             return new PagedResultDto<CourseInfoHomeDto>(totalCount, courseDtos);
         }
 
@@ -179,7 +172,7 @@ namespace Dev.Acadmy.Courses
             var queryable = await _courseRepository.GetQueryableAsync();
             var course = await queryable.Include(c => c.User).Include(x => x.Subject).Include(x=>x.CourseInfos).Include(c => c.College).Include(c => c.Chapters).OrderByDescending(c => c.CreationTime).FirstOrDefaultAsync(x=>x.Id==courseId);
             if (course == null) { throw new UserFriendlyException("Course Not Found"); }
-            var media = await _mediaItemManager.GetAsync(courseId); 
+            var media = await _mediaItemManager.GetAsync(courseId,true); 
             var courseDto =  new CourseInfoHomeDto
             {
                 Id = course.Id,

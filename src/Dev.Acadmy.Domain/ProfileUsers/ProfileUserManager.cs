@@ -1,4 +1,5 @@
 ﻿using Dev.Acadmy.AccountTypes;
+using Dev.Acadmy.Courses;
 using Dev.Acadmy.MediaItems;
 using Dev.Acadmy.Response;
 using Dev.Acadmy.Universites;
@@ -23,8 +24,16 @@ namespace Dev.Acadmy.ProfileUsers
         private readonly MediaItemManager _mediaItemManager;
         private readonly IRepository<AccountType, Guid> _accountTypeRepository;
         private readonly IRepository<College, Guid> _collegeRepository;
-        public ProfileUserManager(IRepository<College, Guid> collegeRepository, IRepository<AccountType, Guid> accountTypeRepository, MediaItemManager mediaItemManager, ICurrentUser currentUser, IIdentityUserRepository userRepository) 
+        private readonly IRepository<University, Guid> _universityRepository;
+        private readonly IRepository<GradeLevel, Guid> _gradeLevelRepository;
+        private readonly IRepository<Term, Guid> _termRepository;
+        private readonly IRepository<CourseStudent, Guid> _courseStudent;
+        public ProfileUserManager(IRepository<CourseStudent, Guid> courseStudent, IRepository<Term, Guid> termRepository, IRepository<GradeLevel, Guid> gradeLevelRepository, IRepository<University, Guid> universityRepository, IRepository<College, Guid> collegeRepository, IRepository<AccountType, Guid> accountTypeRepository, MediaItemManager mediaItemManager, ICurrentUser currentUser, IIdentityUserRepository userRepository) 
         {
+            _courseStudent = courseStudent;
+            _termRepository = termRepository;
+            _gradeLevelRepository = gradeLevelRepository;
+            _universityRepository = universityRepository;
             _collegeRepository = collegeRepository;
             _accountTypeRepository = accountTypeRepository;
             _mediaItemManager = mediaItemManager;
@@ -42,11 +51,6 @@ namespace Dev.Acadmy.ProfileUsers
         {
             var userInfo = await GetUserDataAsync();
             var currentUser = await _userRepository.GetAsync(_currentUser.GetId());
-            if(input.CollegeId != null)
-            {
-                userInfo.CollegeId = input.CollegeId;
-                currentUser.SetProperty(SetPropConsts.CollegeId,input.CollegeId);
-            }
             if(input.Name != null)
             {
                 userInfo.Name = input.Name;
@@ -55,7 +59,7 @@ namespace Dev.Acadmy.ProfileUsers
             if (input.LogoUrl != null) 
             {
                 userInfo.ProfilePictureUrl= input.LogoUrl;
-                await _mediaItemManager.UpdateAsync(currentUser.Id ,new CreateUpdateMediaItemDto { RefId=currentUser.Id,Url=input.LogoUrl}); 
+                await _mediaItemManager.UpdateAsync(currentUser.Id ,new CreateUpdateMediaItemDto { RefId=currentUser.Id,Url=input.LogoUrl,IsImage=true}); 
             }
             await _userRepository.UpdateAsync(currentUser);
             return new ResponseApi<UserInfoDto> { Data = userInfo, Success = true, Message = "update all profiel data success" };
@@ -64,11 +68,16 @@ namespace Dev.Acadmy.ProfileUsers
         private async Task<UserInfoDto> GetUserDataAsync()
         {
             var currentUser = await _userRepository.GetAsync(_currentUser.GetId());
-            var media = await _mediaItemManager.GetAsync(currentUser.Id);
+            var media = await _mediaItemManager.GetAsync(currentUser.Id, true);
             var collegeId = currentUser.GetProperty<Guid>(SetPropConsts.CollegeId);
             var accountTypeId = currentUser.GetProperty<Guid>(SetPropConsts.AccountTypeId);
-            var college = await _collegeRepository.GetAsync(collegeId);
-            var accountType = await _accountTypeRepository.GetAsync(accountTypeId);
+            var universityId = currentUser.GetProperty<Guid>(SetPropConsts.UniversityId);
+            var gradeLevelId = currentUser.GetProperty<Guid>(SetPropConsts.GradeLevelId);
+            var college = await _collegeRepository.FirstOrDefaultAsync(x=>x.Id == collegeId);
+            var accountType = await _accountTypeRepository.FirstOrDefaultAsync(x=>x.Id ==accountTypeId);
+            var university = await _universityRepository.FirstOrDefaultAsync(x => x.Id == universityId);
+            var gradeLevel = await _gradeLevelRepository.FirstOrDefaultAsync(x => x.Id == gradeLevelId);
+            var courseJoinCount = await _courseStudent.CountAsync(x=>x.UserId == currentUser.Id && x.IsSubscibe);
             var userInfo = new UserInfoDto
             {
                 Id = currentUser.Id,
@@ -79,12 +88,14 @@ namespace Dev.Acadmy.ProfileUsers
                 CollegeName = college?.Name ?? string.Empty,
                 AccountTypeId = accountType?.Id ?? null,
                 AccountTypeKey = accountType?.Key.ToString() ?? string.Empty,
-                AccountTypeName = accountType?.Name ?? string.Empty
+                AccountTypeName = accountType?.Name ?? string.Empty,
+                GradeLevelId = gradeLevel?.Id ?? null,
+                GradeLevelName = gradeLevel?.Name ?? string.Empty,
+                UniversityId = university?.Id ?? null,
+                UniversityName = university?.Name ?? string.Empty,
+                CourseJoinCount = courseJoinCount
             };
             return userInfo;
         }
-
-
-
     }
 }
