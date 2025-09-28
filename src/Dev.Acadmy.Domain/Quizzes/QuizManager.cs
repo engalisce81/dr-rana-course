@@ -70,7 +70,7 @@ namespace Dev.Acadmy.Quizzes
         public async Task<ResponseApi<QuizDto>> CreateAsync(CreateUpdateQuizDto input)
         {
             var quiz = _mapper.Map<Quiz>(input);
-            var result = await _quizRepository.InsertAsync(quiz);
+            var result = await _quizRepository.InsertAsync(quiz ,autoSave:true);
             var dto = _mapper.Map<QuizDto>(result);
             return new ResponseApi<QuizDto> { Data = dto, Success = true, Message = "save succeess" };
         }

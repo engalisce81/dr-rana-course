@@ -104,13 +104,13 @@ namespace Dev.Acadmy.Chapters
             var userId = _currentUser.GetId();
             var currentUser = await _userRepository.GetAsync(userId);
 
-            // كل الكويزات اللي الطالب جاوبها
+            // الكويزات اللي الطالب جاوبها قبل كده
             var answeredQuizIds = await (await _quizStudentRepository.GetQueryableAsync())
                 .Where(qs => qs.UserId == userId)
                 .Select(qs => qs.QuizId)
                 .ToListAsync();
 
-            // المحاولات لكل محاضرة
+            // محاولات الطالب في كل محاضرة
             var lectureAttempts = await (await _lectureStudentRepository.GetQueryableAsync())
                 .Where(ls => ls.UserId == userId)
                 .ToListAsync();
@@ -145,16 +145,23 @@ namespace Dev.Acadmy.Chapters
                     int attemptsUsed = lectureStudent?.AttemptsUsed ?? 0;
                     int maxAttempts = lectureStudent?.MaxAttempts ?? l.Quizzes.Count;
 
-                    // حدد الكويز التالي اللي الطالب لسه ماجاوبش عليه
-                    var nextQuiz = l.Quizzes
-                        .OrderBy(q => q.CreationTime)
-                        .Skip(attemptsUsed)
-                        .FirstOrDefault();
+                    // كل الكويزات بالترتيب
+                    var quizzes = l.Quizzes.OrderBy(q => q.CreationTime).ToList();
 
                     QuizInfoDto quizDto = null;
 
-                    if (nextQuiz != null)
+                    if (quizzes.Any())
                     {
+                        int index = attemptsUsed;
+
+                        // لو المحاولات تعدت عدد الكويزات أو وصلت للحد الأقصى → رجع آخر كويز
+                        if (index >= quizzes.Count || attemptsUsed >= maxAttempts)
+                        {
+                            index = quizzes.Count - 1;
+                        }
+
+                        var nextQuiz = quizzes[index];
+
                         quizDto = new QuizInfoDto
                         {
                             QuizId = nextQuiz.Id,
@@ -163,6 +170,19 @@ namespace Dev.Acadmy.Chapters
                             QuizTryCount = maxAttempts,
                             TryedCount = attemptsUsed,
                             AlreadyAnswer = answeredQuizIds.Contains(nextQuiz.Id)
+                        };
+                    }
+                    else
+                    {
+                        // لو المحاضرة مافيهاش كويزات أصلاً
+                        quizDto = new QuizInfoDto
+                        {
+                            QuizId = Guid.Empty,
+                            Title = "لا يوجد كويز متاح",
+                            QuestionsCount = 0,
+                            QuizTryCount = 0,
+                            TryedCount = 0,
+                            AlreadyAnswer = false
                         };
                     }
 
@@ -190,6 +210,7 @@ namespace Dev.Acadmy.Chapters
 
             return new PagedResultDto<CourseChaptersDto>(totalCount, chapterInfoDtos);
         }
+
 
 
 
