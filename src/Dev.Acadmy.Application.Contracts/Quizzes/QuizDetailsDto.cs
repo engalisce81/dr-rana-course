@@ -8,6 +8,7 @@ namespace Dev.Acadmy.Quizzes
         public Guid QuizId { get; set; }
         public string Title { get; set; }
         public int QuizTime { get; set; }
+        public int QuizTryCount { get; set; }
         public List<QuestionDetailesDto> Questions { get; set; }
     }
 }

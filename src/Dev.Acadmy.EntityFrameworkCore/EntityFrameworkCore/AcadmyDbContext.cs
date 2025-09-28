@@ -79,6 +79,8 @@ public class AcadmyDbContext :
     public DbSet<Term> Terms { get; set; }  
     public DbSet<University> Universities { get; set; } 
     public DbSet<GradeLevel> GradeLevels { get; set; }
+    public DbSet<LectureStudent> LectureStudents { get; set; }
+
 
     public AcadmyDbContext(DbContextOptions<AcadmyDbContext> options)
         : base(options)

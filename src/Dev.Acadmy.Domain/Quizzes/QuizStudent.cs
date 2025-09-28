@@ -7,6 +7,7 @@ namespace Dev.Acadmy.Quizzes
 {
     public class QuizStudent :AuditedAggregateRoot<Guid>
     {
+        public Guid? LectureId { get; set; }  // this is 
         public Guid UserId { get; set; }
         public Guid QuizId {  get; set; }
         [ForeignKey(nameof(UserId))]

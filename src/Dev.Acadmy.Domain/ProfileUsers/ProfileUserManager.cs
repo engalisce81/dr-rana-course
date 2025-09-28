@@ -4,10 +4,7 @@ using Dev.Acadmy.MediaItems;
 using Dev.Acadmy.Response;
 using Dev.Acadmy.Universites;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
+
 using System.Threading.Tasks;
 using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories;

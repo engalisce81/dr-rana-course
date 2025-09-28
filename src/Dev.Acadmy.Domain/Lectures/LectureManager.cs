@@ -15,6 +15,7 @@ using Dev.Acadmy.Response;
 using Dev.Acadmy.Questions;
 using Volo.Abp;
 using Dev.Acadmy.MediaItems;
+using static Dev.Acadmy.Permissions.AcadmyPermissions;
 
 namespace Dev.Acadmy.Lectures
 {
@@ -27,8 +28,10 @@ namespace Dev.Acadmy.Lectures
         private readonly QuizManager _quizManager;
         private readonly IRepository<Quiz ,Guid> _quizRepository;
         private readonly MediaItemManager _mediaItemManager;
-        public LectureManager(MediaItemManager mediaItemManager, IRepository<Quiz,Guid> quizRepository, QuizManager quizManager, ICurrentUser currentUser, IIdentityUserRepository userRepository, IMapper mapper, IRepository<Lecture,Guid> lectureRepository)
+        private readonly IRepository<LectureStudent ,Guid> _lectureStudentRepository;
+        public LectureManager(IRepository<LectureStudent, Guid> lectureStudentRepository, MediaItemManager mediaItemManager, IRepository<Quiz,Guid> quizRepository, QuizManager quizManager, ICurrentUser currentUser, IIdentityUserRepository userRepository, IMapper mapper, IRepository<Lecture,Guid> lectureRepository)
         {
+            _lectureStudentRepository = lectureStudentRepository;
             _mediaItemManager = mediaItemManager;
             _quizRepository = quizRepository;
             _quizManager = quizManager;
@@ -62,9 +65,8 @@ namespace Dev.Acadmy.Lectures
         public async Task<ResponseApi<LectureDto>> CreateAsync(CreateUpdateLectureDto input)
         {
             var lecture = _mapper.Map<Lecture>(input);
-            var quiz=await _quizManager.CreateAsync(new CreateUpdateQuizDto {CreaterId = _currentUser.GetId(), QuizTime = input.QuizTime, Title = input.Title+"Quiz" ,Description =input.Content});
-            lecture.QuizId = quiz.Data.Id;
             var result = await _lectureRepository.InsertAsync(lecture);
+            await CreateQuizes(input, result.Id);
             var mediaItem = await _mediaItemManager.CreateAsync(new CreateUpdateMediaItemDto {IsImage=false ,RefId=result.Id,Url=input.PdfUrl });
             var dto = _mapper.Map<LectureDto>(result);
             if(mediaItem != null ) dto.PdfUrl = mediaItem.Url;
@@ -76,17 +78,8 @@ namespace Dev.Acadmy.Lectures
             var lectureDB = await _lectureRepository.FirstOrDefaultAsync(x => x.Id == id);
             if (lectureDB == null) return new ResponseApi<LectureDto> { Data = null, Success = false, Message = "Not found lecture" };
             var lecture = _mapper.Map(input, lectureDB);
-            var quiz = await _quizManager.GetAsync(lectureDB.QuizId);
-            if (quiz.Data != null)
-            {
-                var quizd = await _quizManager.UpdateAsync(quiz.Data.Id, new CreateUpdateQuizDto { CreaterId =_currentUser.GetId(),QuizTime = input.QuizTime, Title = input.Title + "Quiz", Description = input.Content });
-                lecture.QuizId = quizd.Data.Id;
-            }
-            else
-            {
-                var quizd = await _quizManager.CreateAsync(new CreateUpdateQuizDto { CreaterId = _currentUser.GetId() ,QuizTime = input.QuizTime, Title = input.Title + "Quiz", Description = input.Content });
-                lecture.QuizId = quizd.Data.Id;
-            }
+            await _quizManager.DeletQuizesByLectureId(id);
+            await CreateQuizes(input, id);
             var result = await _lectureRepository.UpdateAsync(lecture);
             var mediaItemDB = await _mediaItemManager.UpdateAsync(id ,new CreateUpdateMediaItemDto { IsImage=false , RefId = result.Id ,Url = input.PdfUrl});
             var dto = _mapper.Map<LectureDto>(result);
@@ -98,12 +91,16 @@ namespace Dev.Acadmy.Lectures
             var lecture = await _lectureRepository.FirstOrDefaultAsync(x => x.Id == id);
             if (lecture == null) return new ResponseApi<bool> { Data = false, Success = false, Message = "Not found lecture" };
             await _mediaItemManager.DeleteAsync(id);
+            await _quizManager.DeletQuizesByLectureId(id);
+            await _lectureStudentRepository.DeleteManyAsync( await (await _lectureStudentRepository.GetQueryableAsync()).Where(x => x.LectureId == id).ToListAsync());
             await _lectureRepository.DeleteAsync(lecture);
-            var quiz = await _quizManager.GetAsync(lecture.QuizId);
-            if(quiz.Data != null) await _quizManager.DeleteAsync(quiz.Data.Id);
             return new ResponseApi<bool> { Data = true, Success = true, Message = "delete succeess" };
         }
 
+        public async Task CreateQuizes(CreateUpdateLectureDto input , Guid lectureId)
+        {
+            for (var i = 0; i < input.QuizCount; i++) await _quizManager.CreateAsync(new CreateUpdateQuizDto { CreaterId = _currentUser.GetId(), QuizTime = input.QuizTime, Title = input.Title + "Quiz " + i, Description = input.Content });
+        }
         public async Task<ResponseApi<QuizDetailsDto>> GetQuizDetailsAsync(Guid quizId)
         {
             var queryable = await _quizRepository.GetQueryableAsync();
@@ -122,6 +119,7 @@ namespace Dev.Acadmy.Lectures
                 QuizId = quiz.Id,
                 Title = quiz.Title,
                 QuizTime = quiz.QuizTime,
+                QuizTryCount = quiz.QuizTryCount,
                 Questions = quiz.Questions.Select(q => new QuestionDetailesDto
                 {
                     QuestionId = q.Id,

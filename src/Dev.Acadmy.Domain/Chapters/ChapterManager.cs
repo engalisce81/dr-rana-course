@@ -26,8 +26,10 @@ namespace Dev.Acadmy.Chapters
         private readonly ICurrentUser _currentUser;
         private readonly IRepository<QuizStudent, Guid> _quizStudentRepository;
         private readonly MediaItemManager _mediaItemManager;
-        public ChapterManager(MediaItemManager mediaItemManager, IRepository<QuizStudent, Guid> quizStudentRepository, ICurrentUser currentUser, IIdentityUserRepository userRepository, IMapper mapper, IRepository<Chapter> chapterRepository)
+        private readonly IRepository<LectureStudent ,Guid> _lectureStudentRepository;
+        public ChapterManager(IRepository<LectureStudent, Guid> lectureStudentRepository, MediaItemManager mediaItemManager, IRepository<QuizStudent, Guid> quizStudentRepository, ICurrentUser currentUser, IIdentityUserRepository userRepository, IMapper mapper, IRepository<Chapter> chapterRepository)
         {
+            _lectureStudentRepository = lectureStudentRepository;
             _mediaItemManager = mediaItemManager;
             _quizStudentRepository = quizStudentRepository;
             _currentUser = currentUser;
@@ -98,25 +100,38 @@ namespace Dev.Acadmy.Chapters
         {
             if (pageNumber <= 0) pageNumber = 1;
             if (pageSize <= 0) pageSize = 10;
-            var currentUser = await _userRepository.GetAsync(_currentUser.GetId());
-            // نجيب كل الكويزات اللي الطالب جاوبها قبل كده
+
+            var userId = _currentUser.GetId();
+            var currentUser = await _userRepository.GetAsync(userId);
+
+            // كل الكويزات اللي الطالب جاوبها
             var answeredQuizIds = await (await _quizStudentRepository.GetQueryableAsync())
-                .Where(qs => qs.UserId == currentUser.Id)
+                .Where(qs => qs.UserId == userId)
                 .Select(qs => qs.QuizId)
                 .ToListAsync();
+
+            // المحاولات لكل محاضرة
+            var lectureAttempts = await (await _lectureStudentRepository.GetQueryableAsync())
+                .Where(ls => ls.UserId == userId)
+                .ToListAsync();
+
             var queryable = await _chapterRepository.GetQueryableAsync();
-            var query = queryable.Include(x => x.Course)
+            var query = queryable
+                .Include(x => x.Course)
                 .Include(c => c.Lectures)
-                    .ThenInclude(l => l.Quiz)
+                    .ThenInclude(l => l.Quizzes)
                         .ThenInclude(q => q.Questions)
                 .Where(c => c.CourseId == courseId);
+
             var totalCount = await query.CountAsync();
             var chapters = await query
                 .OrderBy(c => c.CreationTime)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
+
             var chapterInfoDtos = new List<CourseChaptersDto>();
+
             foreach (var c in chapters)
             {
                 var lectureDtos = new List<LectureInfoDto>();
@@ -125,22 +140,43 @@ namespace Dev.Acadmy.Chapters
                 {
                     var media = await _mediaItemManager.GetAsync(l.Id);
 
+                    var lectureStudent = lectureAttempts.FirstOrDefault(x => x.LectureId == l.Id);
+
+                    int attemptsUsed = lectureStudent?.AttemptsUsed ?? 0;
+                    int maxAttempts = lectureStudent?.MaxAttempts ?? l.Quizzes.Count;
+
+                    // حدد الكويز التالي اللي الطالب لسه ماجاوبش عليه
+                    var nextQuiz = l.Quizzes
+                        .OrderBy(q => q.CreationTime)
+                        .Skip(attemptsUsed)
+                        .FirstOrDefault();
+
+                    QuizInfoDto quizDto = null;
+
+                    if (nextQuiz != null)
+                    {
+                        quizDto = new QuizInfoDto
+                        {
+                            QuizId = nextQuiz.Id,
+                            Title = nextQuiz.Title,
+                            QuestionsCount = nextQuiz.Questions.Count,
+                            QuizTryCount = maxAttempts,
+                            TryedCount = attemptsUsed,
+                            AlreadyAnswer = answeredQuizIds.Contains(nextQuiz.Id)
+                        };
+                    }
+
                     lectureDtos.Add(new LectureInfoDto
                     {
                         LectureId = l.Id,
                         Title = l.Title,
                         Content = l.Content,
                         VideoUrl = l.VideoUrl,
-                        PdfUrl = media?.Url??"", // بدل .Result
-                        Quiz = new QuizInfoDto
-                        {
-                            QuizId = l.Quiz.Id,
-                            Title = l.Quiz.Title,
-                            QuestionsCount = l.Quiz.Questions.Count,
-                            AlreadyAnswer = answeredQuizIds.Contains(l.Quiz.Id)
-                        }
+                        PdfUrl = media?.Url ?? "",
+                        Quiz = quizDto
                     });
                 }
+
                 chapterInfoDtos.Add(new CourseChaptersDto
                 {
                     CourseId = c.CourseId,
@@ -151,8 +187,10 @@ namespace Dev.Acadmy.Chapters
                     Lectures = lectureDtos
                 });
             }
+
             return new PagedResultDto<CourseChaptersDto>(totalCount, chapterInfoDtos);
         }
+
 
 
     }

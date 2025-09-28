@@ -1,6 +1,7 @@
 ﻿
 using Dev.Acadmy.Quizzes;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
@@ -15,11 +16,10 @@ namespace Dev.Acadmy.Lectures
         public string Content { get; set; }
         public string VideoUrl { get; set; }
         public Guid ChapterId { get; set; }
-        public Guid QuizId { get; set; }
-        public bool IsVisible { get; set; } 
+        public bool IsVisible { get; set; }
+        public int QuizTryCount { get; set; }
         [ForeignKey(nameof(ChapterId))]
         public Chapters.Chapter Chapter { get; set; }
-        [ForeignKey(nameof(QuizId))]
-        public Quiz Quiz { get; set;}
+        public ICollection<Quiz> Quizzes { get; set; } = new List<Quiz>();  
     }
 }

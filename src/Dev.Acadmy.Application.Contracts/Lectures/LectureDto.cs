@@ -15,9 +15,8 @@ namespace Dev.Acadmy.Lectures
         public string PdfUrl { get; set; }
         public Guid ChapterId { get; set; }
         public string ChapterName { get; set; }
-        public Guid QuizId { get; set; }
-        public string QuizName { get; set; }
         public int QuizTime { get; set; }
+        public int QuizTryCount { get; set; }
         public bool IsVisible { get; set; }
     }
 }

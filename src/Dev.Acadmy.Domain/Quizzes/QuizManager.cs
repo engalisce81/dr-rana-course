@@ -12,6 +12,7 @@ using Volo.Abp;
 using Volo.Abp.Users;
 using Volo.Abp.Identity;
 using static Dev.Acadmy.Permissions.AcadmyPermissions;
+using Dev.Acadmy.Lectures;
 
 namespace Dev.Acadmy.Quizzes
 {
@@ -22,8 +23,12 @@ namespace Dev.Acadmy.Quizzes
         private readonly IRepository<QuizStudent> _quizStudentRepository;
         private readonly ICurrentUser _currentUser;
         private readonly IIdentityUserRepository _userRepository;
-        public QuizManager(IIdentityUserRepository userRepository, ICurrentUser currentUser, IRepository<QuizStudent> quizStudentRepository, IMapper mapper, IRepository<Quiz,Guid> quizRepository)
+        private readonly IRepository<LectureStudent, Guid> _lectureStudentRepository;
+        private readonly IRepository<Lecture, Guid> _lecctureRepository;
+        public QuizManager(IRepository<Lecture, Guid> lecctureRepository, IRepository<LectureStudent, Guid> lectureStudentRepository, IIdentityUserRepository userRepository, ICurrentUser currentUser, IRepository<QuizStudent> quizStudentRepository, IMapper mapper, IRepository<Quiz,Guid> quizRepository)
         {
+            _lecctureRepository = lecctureRepository;
+            _lectureStudentRepository = lectureStudentRepository;
             _userRepository = userRepository;
             _currentUser = currentUser;
             _quizRepository = quizRepository;
@@ -37,6 +42,19 @@ namespace Dev.Acadmy.Quizzes
             if (quiz == null) return new ResponseApi<QuizDto> { Data = null, Success = false, Message = "Not found quiz" };
             var dto = _mapper.Map<QuizDto>(quiz);
             return new ResponseApi<QuizDto> { Data = dto, Success = true, Message = "find succeess" };
+        }
+
+        public async Task<List<Quiz>> GetQuizesByLectureId(Guid lectureId) => await ( await _quizRepository.GetQueryableAsync()).Where(x=>x.LectureId == lectureId).ToListAsync();
+        
+        public async Task DeletQuizesByLectureId(Guid lectureId)
+        {
+            var quizes = await (await _quizRepository.GetQueryableAsync()).Where(x => x.LectureId == lectureId).ToListAsync();
+            foreach(var quiz in quizes)
+            {
+                var studentQuiz = await (await _quizStudentRepository.GetQueryableAsync()).Where(x => x.QuizId == quiz.Id).ToListAsync();
+                await _quizStudentRepository.DeleteManyAsync(studentQuiz);
+                await _quizRepository.DeleteAsync(quiz);
+            }
         }
 
         public async Task<PagedResultDto<QuizDto>> GetListAsync(int pageNumber, int pageSize, string? search)
@@ -134,21 +152,90 @@ namespace Dev.Acadmy.Quizzes
             return new ResponseApi<QuizResultDto>{Data= new QuizResultDto{QuizId = quiz.Id,TotalScore = totalScore,StudentScore = studentScore},Success= true,Message="Correct Success" };
         }
 
-        public async Task<ResponseApi<string>> MarkQuizAsync(Guid quizId, int score)
+        public async Task<ResponseApi<QuizStudentDto>> MarkQuizAsync(Guid quizId, int score)
         {
-            var currentUser = await _userRepository.GetAsync(_currentUser.GetId());
-            var existingQuizStudent = await _quizStudentRepository.FirstOrDefaultAsync(x => x.UserId == currentUser.Id && x.QuizId == quizId);
-            if (existingQuizStudent != null)
+            var userId = _currentUser.GetId();
+            var quiz = await _quizRepository.GetAsync(quizId);
+
+            if (quiz == null)
             {
-                existingQuizStudent.Score = score;
-                await _quizStudentRepository.UpdateAsync(existingQuizStudent);
+                return new ResponseApi<QuizStudentDto>
+                {
+                    Success = false,
+                    Message = "Quiz not found",
+                    Data = null
+                };
             }
-            else
+
+            // هات المحاضرة
+            var lectureId = quiz.LectureId;
+            if (lectureId == null)
             {
-                var quizStudent = new QuizStudent{UserId = currentUser.Id,QuizId = quizId,Score = score};
-                await _quizStudentRepository.InsertAsync(quizStudent);
+                return new ResponseApi<QuizStudentDto>
+                {
+                    Success = false,
+                    Message = "Quiz is not linked to a lecture",
+                    Data = null
+                };
             }
-            return new ResponseApi<string> { Data = $"save score {score}", Success = true, Message = "save success" };
+            var lecture = await _lecctureRepository.FirstOrDefaultAsync(x => x.Id == lectureId);
+            // هات LectureStudent
+            var lectureStudent = await _lectureStudentRepository.FirstOrDefaultAsync(x =>
+                x.LectureId == lectureId && x.UserId == userId);
+
+            if (lectureStudent == null)
+            {
+                lectureStudent = new LectureStudent
+                {
+                    LectureId = lectureId.Value,
+                    UserId = userId,
+                    AttemptsUsed = 0,
+                    MaxAttempts =  lecture?.QuizTryCount??0
+                };
+                await _lectureStudentRepository.InsertAsync(lectureStudent);
+            }
+
+            if (lectureStudent.IsCompleted)
+            {
+                return new ResponseApi<QuizStudentDto>
+                {
+                    Success = false,
+                    Message = "لقد استهلكت كل المحاولات المتاحة لهذه المحاضرة",
+                    Data = null
+                };
+            }
+
+            // عدل المحاولات
+            lectureStudent.AttemptsUsed++;
+            await _lectureStudentRepository.UpdateAsync(lectureStudent);
+
+            // سجل QuizStudent
+            var quizStudent = new QuizStudent
+            {
+                LectureId = lectureId,
+                UserId = userId,
+                QuizId = quizId,
+                Score = score
+            };
+            await _quizStudentRepository.InsertAsync(quizStudent);
+
+            // رجع الـ DTO
+            var dto = new QuizStudentDto
+            {
+                LectureId = lectureId.Value,
+                QuizId = quizId,
+                UserId = userId,
+                Score = score
+            };
+
+            return new ResponseApi<QuizStudentDto>
+            {
+                Success = true,
+                Message = "تم تسجيل نتيجتك بنجاح",
+                Data = dto
+            };
         }
+
+
     }
 }
