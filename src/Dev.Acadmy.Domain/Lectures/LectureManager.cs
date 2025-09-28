@@ -99,7 +99,7 @@ namespace Dev.Acadmy.Lectures
 
         public async Task CreateQuizes(CreateUpdateLectureDto input , Guid lectureId)
         {
-            for (var i = 0; i < input.QuizCount; i++) await _quizManager.CreateAsync(new CreateUpdateQuizDto { CreaterId = _currentUser.GetId(), QuizTime = input.QuizTime, Title = input.Title + "Quiz " + i, Description = input.Content });
+            for (var i = 0; i < input.QuizCount; i++) await _quizManager.CreateAsync(new CreateUpdateQuizDto { CreaterId = _currentUser.GetId(), QuizTime = input.QuizTime, LectureId = lectureId,Title = input.Title + "Quiz " + i, Description = input.Content });
         }
         public async Task<ResponseApi<QuizDetailsDto>> GetQuizDetailsAsync(Guid quizId)
         {

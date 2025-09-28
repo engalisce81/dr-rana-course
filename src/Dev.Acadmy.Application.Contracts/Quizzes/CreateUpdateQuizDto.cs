@@ -12,6 +12,8 @@ namespace Dev.Acadmy.Quizzes
         public string Title { get; set; }
         public string Description { get; set; }
         public int QuizTime { get; set; }
+        public Guid? LectureId { get; set; }
+
 
     }
 }
