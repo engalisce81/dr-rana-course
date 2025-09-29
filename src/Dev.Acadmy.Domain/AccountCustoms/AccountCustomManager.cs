@@ -58,15 +58,16 @@ namespace Dev.Acadmy.AccountCustoms
             user.Name = input.FullName;
             user.SetProperty(SetPropConsts.CollegeId, input.CollegeId);
             user.SetProperty(SetPropConsts.Gender,input.Gender);
-           user.SetProperty(SetPropConsts.UniversityId, input.UniversityId);
-            user.SetProperty(SetPropConsts.GradeLevelId, input.GradeLevelId);
+            user.SetProperty(SetPropConsts.UniversityId, input.UniversityId);
             if (accountType.Key == (int)AccountTypeKey.Student)
             {
+                user.SetProperty(SetPropConsts.GradeLevelId, input.GradeLevelId);
                 user.SetProperty(SetPropConsts.StudentMobileIP, input.StudentMobileIP);
                 var currentTerm = await _termRepository.FirstOrDefaultAsync(x => x.IsActive);
                 if(currentTerm != null)user.SetProperty(SetPropConsts.TermId, currentTerm.Id);
 
             }
+            else  accountType.Key = (int)AccountTypeKey.Teacher;
             user.SetIsActive(true);
             var result = await _userManager.CreateAsync(user, input.Password);
             if (result.Succeeded)
@@ -97,7 +98,7 @@ namespace Dev.Acadmy.AccountCustoms
         {
             var university = await _universityRepository.GetAsync(input.UniversityId);
             var college = await _collegeRepository.GetAsync(input.CollegeId);
-            var gradeLevel = await _gradeLevelRepository.GetAsync(input.GradeLevelId);
+            if(input.GradeLevelId !=null)  await _gradeLevelRepository.GetAsync((Guid)input.GradeLevelId);
         }
 
     }

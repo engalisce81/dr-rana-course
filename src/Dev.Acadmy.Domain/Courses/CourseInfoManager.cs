@@ -30,10 +30,11 @@ namespace Dev.Acadmy.Courses
             return new ResponseApi<CourseInfoDto> { Data = dto, Success = true, Message = "find succeess" };
         }
 
-        public async Task<PagedResultDto<CourseInfoDto>> GetListAsync(int pageNumber, int pageSize, string? search)
+        public async Task<PagedResultDto<CourseInfoDto>> GetListAsync(int pageNumber, int pageSize, string? search,Guid courseId)
         {
             var queryable = await _courseinfoRepository.GetQueryableAsync();
             if (!string.IsNullOrWhiteSpace(search)) queryable = queryable.Where(c => c.Name.Contains(search));
+            queryable = queryable.Where(x => x.CourseId == courseId);
             var totalCount = await AsyncExecuter.CountAsync(queryable);
             var courseinfos = await AsyncExecuter.ToListAsync(queryable.OrderByDescending(c => c.CreationTime).Skip((pageNumber - 1) * pageSize).Take(pageSize));
             var courseinfoDtos = _mapper.Map<List<CourseInfoDto>>(courseinfos);

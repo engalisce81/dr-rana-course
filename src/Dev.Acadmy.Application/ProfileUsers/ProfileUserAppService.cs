@@ -17,7 +17,7 @@ namespace Dev.Acadmy.ProfileUsers
             _profileUserManager = profileUserManager;
         }
         [Authorize]
-        public async Task<ResponseApi<UserInfoDto>> GetUserInfoAsync() => await _profileUserManager.GetUserInfoAsync();
+        public async Task<ResponseApi<UserInfoDto>> GetUserInfoAsync(string deviceIp) => await _profileUserManager.GetUserInfoAsync(deviceIp);
         [Authorize]
         public async Task<ResponseApi<UserInfoDto>> UpdateAllUserDataAsync(UpdateProfielDto input) => await _profileUserManager.UpdateAllUserDataAsync(input);
 

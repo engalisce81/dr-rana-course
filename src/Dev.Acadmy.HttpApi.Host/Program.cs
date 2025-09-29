@@ -32,15 +32,15 @@ public class Program
             
             Log.Information("Starting Dev.Acadmy.HttpApi.Host.");
             var builder = WebApplication.CreateBuilder(args);
-            var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+            //var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
             var configuration = builder.Configuration;
             builder.Host.AddAppSettingsSecretsJson()
                 .UseAutofac()
                 .UseSerilog();
-            builder.WebHost.ConfigureKestrel(options =>
-            {
-                options.ListenAnyIP(int.Parse(port));
-            });
+            //builder.WebHost.ConfigureKestrel(options =>
+            //{
+            //    options.ListenAnyIP(int.Parse(port));
+            //});
             builder.Services.Configure<ForwardedHeadersOptions>(options =>
             {
                 options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;

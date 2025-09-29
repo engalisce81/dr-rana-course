@@ -6,6 +6,7 @@ using Dev.Acadmy.Universites;
 using System;
 
 using System.Threading.Tasks;
+using Volo.Abp;
 using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
@@ -38,9 +39,11 @@ namespace Dev.Acadmy.ProfileUsers
             _currentUser = currentUser;
         }
 
-        public async Task<ResponseApi<UserInfoDto>> GetUserInfoAsync()
+        public async Task<ResponseApi<UserInfoDto>> GetUserInfoAsync(string deviceIp)
         {
             var userInfo = await GetUserDataAsync();
+            var currentUser = await _userRepository.GetAsync(_currentUser.GetId());
+            if (deviceIp.Trim().ToLower() != currentUser.GetProperty<string>(SetPropConsts.StudentMobileIP).Trim().ToLower()) { throw new UserFriendlyException("this devicee not owner this email"); }
             return new ResponseApi<UserInfoDto> { Data = userInfo, Success = true, Message = "get user info success" };
         }
 

@@ -21,14 +21,16 @@ namespace Dev.Acadmy.Chapters
     public class ChapterManager:DomainService
     {
         private readonly IRepository<Chapter> _chapterRepository;
+        private readonly LectureManager _lectureManger;
         private readonly IMapper _mapper;
         private readonly IIdentityUserRepository _userRepository;
         private readonly ICurrentUser _currentUser;
         private readonly IRepository<QuizStudent, Guid> _quizStudentRepository;
         private readonly MediaItemManager _mediaItemManager;
         private readonly IRepository<LectureStudent ,Guid> _lectureStudentRepository;
-        public ChapterManager(IRepository<LectureStudent, Guid> lectureStudentRepository, MediaItemManager mediaItemManager, IRepository<QuizStudent, Guid> quizStudentRepository, ICurrentUser currentUser, IIdentityUserRepository userRepository, IMapper mapper, IRepository<Chapter> chapterRepository)
+        public ChapterManager(LectureManager lectureManger, IRepository<LectureStudent, Guid> lectureStudentRepository, MediaItemManager mediaItemManager, IRepository<QuizStudent, Guid> quizStudentRepository, ICurrentUser currentUser, IIdentityUserRepository userRepository, IMapper mapper, IRepository<Chapter> chapterRepository)
         {
+            _lectureManger = lectureManger;
             _lectureStudentRepository = lectureStudentRepository;
             _mediaItemManager = mediaItemManager;
             _quizStudentRepository = quizStudentRepository;
@@ -79,8 +81,9 @@ namespace Dev.Acadmy.Chapters
 
         public async Task<ResponseApi<bool>> DeleteAsync(Guid id)
         {
-            var chapter = await _chapterRepository.FirstOrDefaultAsync(x => x.Id == id);
+            var chapter = await(await _chapterRepository.GetQueryableAsync()).Include(x=>x.Lectures).FirstOrDefaultAsync(x => x.Id == id);
             if (chapter == null) return new ResponseApi<bool> { Data = false, Success = false, Message = "Not found chapter" };
+            foreach (var lec in chapter.Lectures) await _lectureManger.DeleteAsync(lec.Id);
             await _chapterRepository.DeleteAsync(chapter);
             return new ResponseApi<bool> { Data = true, Success = true, Message = "delete succeess" };
         }
@@ -213,6 +216,22 @@ namespace Dev.Acadmy.Chapters
 
 
 
+        public async Task<PagedResultDto<LookupDto>> GetChaptersByCourseLookUpAsync(Guid courseId)
+        {
+            // هات الـ Chapters اللي ليها نفس CourseId
+            var queryable = await _chapterRepository.GetQueryableAsync();
+            var chapters = await queryable
+                .Where(c => c.CourseId == courseId)
+                .ToListAsync();
+
+            if (!chapters.Any())
+                return new PagedResultDto<LookupDto>(0,new List<LookupDto>());
+
+            // اعمل Map للـ DTOs
+            var chapterDtos = _mapper.Map<List<LookupDto>>(chapters);
+
+            return new PagedResultDto<LookupDto>(chapterDtos.Count(), chapterDtos);
+        }
 
     }
 }

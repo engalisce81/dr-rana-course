@@ -16,6 +16,7 @@ using Dev.Acadmy.Questions;
 using Dev.Acadmy.Response;
 using Dev.Acadmy.LookUp;
 using Volo.Abp;
+using Dev.Acadmy.Chapters;
 
 namespace Dev.Acadmy.Courses
 {
@@ -28,8 +29,12 @@ namespace Dev.Acadmy.Courses
         private readonly IIdentityUserRepository _userRepository;
         private readonly QuestionBankManager _questionBankManager;
         private readonly IRepository<CourseStudent, Guid> _courseStudentRepository;
-        public CourseManager(IRepository<CourseStudent, Guid> courseStudentRepository, QuestionBankManager questionBankManager, IIdentityUserRepository userRepository, MediaItemManager mediaItemManager, ICurrentUser currentUser, IRepository<Course> courseRepository , IMapper mapper) 
+        private readonly ChapterManager _chapterManager;
+        private readonly CourseInfoManager _courseInfoManager;
+        public CourseManager(CourseInfoManager courseInfoManager, ChapterManager chapterManager, IRepository<CourseStudent, Guid> courseStudentRepository, QuestionBankManager questionBankManager, IIdentityUserRepository userRepository, MediaItemManager mediaItemManager, ICurrentUser currentUser, IRepository<Course> courseRepository , IMapper mapper) 
         {
+            _courseInfoManager = courseInfoManager;
+            _chapterManager = chapterManager;
             _courseStudentRepository = courseStudentRepository;
             _questionBankManager = questionBankManager;
             _userRepository = userRepository;
@@ -69,8 +74,11 @@ namespace Dev.Acadmy.Courses
 
         public async Task<ResponseApi<CourseDto>> CreateAsync(CreateUpdateCourseDto input)
         {
+            var currentUser = await _userRepository.GetAsync(_currentUser.GetId());
             var course = _mapper.Map<Course>(input);
-            course.UserId=_currentUser.GetId(); 
+            course.UserId = currentUser.Id;
+            var collegeId = currentUser.GetProperty<Guid>(SetPropConsts.CollegeId);
+            course.CollegeId = collegeId;
             var result = await _courseRepository.InsertAsync(course);
             await _mediaItemManager.CreateAsync(new CreateUpdateMediaItemDto { Url =input.LogoUrl, RefId = result.Id,IsImage=true});
             await _questionBankManager.CreateAsync(new CreateUpdateQuestionBankDto {CreatorId =result.UserId, CourseId = result.Id, Name = $"{result.Name} Question Bank" });
@@ -83,6 +91,9 @@ namespace Dev.Acadmy.Courses
             var courseDB = await _courseRepository.FirstOrDefaultAsync(x => x.Id == id);
             if (courseDB == null) return new ResponseApi<CourseDto> { Data = null, Success = false, Message = "Not found Course" };
             var course = _mapper.Map(input, courseDB);
+            var currentUser = await _userRepository.GetAsync(_currentUser.GetId());
+            var collegeId = currentUser.GetProperty<Guid>(SetPropConsts.CollegeId);
+            course.CollegeId = collegeId;
             var result = await _courseRepository.UpdateAsync(course);
             await _mediaItemManager.UpdateAsync(id, new CreateUpdateMediaItemDto { Url = input.LogoUrl, RefId = result.Id ,IsImage=true });
             var questionBank = await _questionBankManager.GetByCourse(id);
@@ -93,13 +104,18 @@ namespace Dev.Acadmy.Courses
         public async Task<ResponseApi<bool>> DeleteAsync(Guid id)
         {
             var roles = await _userRepository.GetRolesAsync(_currentUser.GetId());
-            var course = await _courseRepository.FirstOrDefaultAsync(x => x.Id == id);
+            var course = await (await _courseRepository.GetQueryableAsync()).Include(x=>x.Chapters).Include(x=>x.CourseInfos).FirstOrDefaultAsync(x => x.Id == id);
             if (course == null) return new ResponseApi<bool> { Data = false, Success = false, Message = "Not found Course" };
-            if(roles.Any(x=>x.Name.ToUpper() != RoleConsts.Admin.ToUpper()) && course.UserId != _currentUser.GetId()) return new ResponseApi<bool> { Data = false, Success = false, Message = "you not allowed to delete this course" };
-            await _courseRepository.DeleteAsync(course);
-            await _mediaItemManager.DeleteAsync(id);
+            var courseStudent =await (await _courseStudentRepository.GetQueryableAsync()).Where(x=>x.CourseId == course.Id).ToListAsync();
+            if (courseStudent != null) await _courseStudentRepository.DeleteManyAsync(courseStudent);
             var questionBank = await _questionBankManager.GetByCourse(id);
-            if(questionBank!=null) await _questionBankManager.DeleteAsync(questionBank.Id);
+            if (questionBank != null) await _questionBankManager.DeleteAsync(questionBank.Id);
+            var chapterIds = course.Chapters.Select(x => x.Id).ToList();
+            if (chapterIds.Any()) foreach (var chapter in chapterIds) await _chapterManager.DeleteAsync(chapter);
+            var infos = course.CourseInfos.Select(x => x.Id);
+            if (infos.Any()) foreach (var info in infos) await _courseInfoManager.DeleteAsync(info);
+            await _mediaItemManager.DeleteAsync(id);
+            await _courseRepository.DeleteAsync(course);
             return new ResponseApi<bool> { Data = true, Success = true, Message = "delete succeess" };
         }
 
@@ -195,5 +211,24 @@ namespace Dev.Acadmy.Courses
             return new ResponseApi<CourseInfoHomeDto>() { Data= courseDto ,Success=true , Message="Find Course Success"};
         }
 
+        public async Task<PagedResultDto<LookupDto>> GetMyCoursesLookUpAsync()
+        {
+            // هات الـ User الحالي
+            var currentUserId = _currentUser.GetId();
+
+            // هات كل الكورسات اللي انت الـ CreatorId فيها
+            var queryable = await _courseRepository.GetQueryableAsync();
+            var myCourses = await queryable
+                .Where(c => c.UserId == currentUserId)
+                .ToListAsync();
+
+            if (!myCourses.Any())
+                return new PagedResultDto<LookupDto>(0,new List<LookupDto>() );
+
+            // اعمل Map للـ DTO
+            var courseDtos = _mapper.Map<List<LookupDto>>(myCourses);
+
+            return new PagedResultDto<LookupDto>( courseDtos.Count(),courseDtos);
+        }
     }
 }

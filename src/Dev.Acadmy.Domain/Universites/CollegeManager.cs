@@ -74,8 +74,8 @@ namespace Dev.Acadmy.Universites
         {
             var college = await (await _collegeRepository.GetQueryableAsync()).Include(x => x.GradeLevels).FirstOrDefaultAsync(x => x.Id == id);
             if (college == null) return new ResponseApi<bool> { Data = false, Success = false, Message = "Not found college" };
-            await _collegeRepository.DeleteAsync(college);
             await DeleteGraeLevels(college.GradeLevels.ToList());
+            await _collegeRepository.DeleteAsync(college);
             return new ResponseApi<bool> { Data = true, Success = true, Message = "delete succeess" };
         }
 

@@ -30,5 +30,8 @@ namespace Dev.Acadmy.Chapters
         public async Task<PagedResultDto<LookupDto>> GetListChaptersAsync() => await _chapterManager.GetListChaptersAsync();
         [Authorize]
         public async Task<PagedResultDto<CourseChaptersDto>> GetCourseChaptersAsync(Guid courseId, int pageNumber, int pageSize) => await _chapterManager.GetCourseChaptersAsync(courseId, pageNumber, pageSize);
+        [Authorize]
+        public async Task<PagedResultDto<LookupDto>> GetChaptersByCourseLookUpAsync(Guid courseId) => await _chapterManager.GetChaptersByCourseLookUpAsync(courseId);
+
     }
 }

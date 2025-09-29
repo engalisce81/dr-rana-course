@@ -8,7 +8,6 @@ namespace Dev.Acadmy.Courses
         public string Description { get; set; }
         public decimal Price { get; set; }
         public string LogoUrl { get; set; }
-        public Guid? CollegeId { get; set; }
         public bool IsActive { get; set; } = true; // enabled/disabled
         public bool IsLifetime { get; set; } = false;
         public int? DurationInDays { get; set; } // null if lifetime

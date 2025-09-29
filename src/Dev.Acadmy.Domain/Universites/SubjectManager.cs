@@ -13,6 +13,7 @@ using Dev.Acadmy.LookUp;
 using Volo.Abp.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Dynamic.Core;
+using Dev.Acadmy.Courses;
 
 namespace Dev.Acadmy.Universites
 {
@@ -23,8 +24,12 @@ namespace Dev.Acadmy.Universites
         private readonly ICurrentUser _currentUser;
         private readonly IRepository<College, Guid> _collegeRepository;
         private readonly IIdentityUserRepository _userRepository;
-        public SubjectManager(IIdentityUserRepository userRepository, IRepository<College, Guid> collegeRepository, ICurrentUser currentUser, IMapper mapper, IRepository<Subject , Guid> subjectRepository)
+        private readonly CourseManager _courseManager;
+        private readonly IRepository<GradeLevel, Guid> _gradeLevelRepository;
+        public SubjectManager(IRepository<GradeLevel, Guid> gradeLevelRepository, CourseManager courseManager, IIdentityUserRepository userRepository, IRepository<College, Guid> collegeRepository, ICurrentUser currentUser, IMapper mapper, IRepository<Subject , Guid> subjectRepository)
         {
+            _gradeLevelRepository = gradeLevelRepository;
+            _courseManager = courseManager;
             _userRepository = userRepository;
             _collegeRepository = collegeRepository;
             _currentUser = currentUser;
@@ -70,8 +75,9 @@ namespace Dev.Acadmy.Universites
 
         public async Task<ResponseApi<bool>> DeleteAsync(Guid id)
         {
-            var subject = await _subjectRepository.FirstOrDefaultAsync(x => x.Id == id);
+            var subject = await(await _subjectRepository.GetQueryableAsync()).Include(x=>x.Courses).FirstOrDefaultAsync(x => x.Id == id);
             if (subject == null) return new ResponseApi<bool> { Data = false, Success = false, Message = "Not found subject" };
+            foreach (var course in subject.Courses) await _courseManager.DeleteAsync(course.Id);
             await _subjectRepository.DeleteAsync(subject);
             return new ResponseApi<bool> { Data = true, Success = true, Message = "delete succeess" };
         }
@@ -89,5 +95,33 @@ namespace Dev.Acadmy.Universites
             var subjectDtos = _mapper.Map<List<LookupDto>>(subjects);
             return new PagedResultDto<LookupDto>(subjectDtos.Count, subjectDtos);
         }
+
+        public async Task<PagedResultDto<LookupDto>> GetSubjectsWithCollegeListAsync()
+        {
+            var currentUser = await _userRepository.GetAsync(_currentUser.GetId());
+            var collegeId = currentUser.GetProperty<Guid?>(SetPropConsts.CollegeId);
+
+            var gradeLevelIds = await (await _gradeLevelRepository.GetQueryableAsync())
+                .Where(x => x.CollegeId == collegeId)
+                .Select(x => x.Id)
+                .ToListAsync();
+
+            if (!gradeLevelIds.Any())
+                return new PagedResultDto<LookupDto>(0, new List<LookupDto>());
+
+            var queryable = (await _subjectRepository.GetQueryableAsync())
+                .Include(x => x.GradeLevel)
+                .Where(s => gradeLevelIds.Contains((Guid)s.GradeLevelId));
+
+            var subjects = await queryable.ToListAsync();
+
+            if (!subjects.Any())
+                return new PagedResultDto<LookupDto>(0, new List<LookupDto>());
+
+            var subjectDtos = _mapper.Map<List<LookupDto>>(subjects);
+
+            return new PagedResultDto<LookupDto>(subjectDtos.Count, subjectDtos);
+        }
+
     }
 }

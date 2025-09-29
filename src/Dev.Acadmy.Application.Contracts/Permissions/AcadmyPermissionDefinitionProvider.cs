@@ -113,6 +113,7 @@ public class AcadmyPermissionDefinitionProvider : PermissionDefinitionProvider
         universities.AddChild(AcadmyPermissions.Universites.Create, L("Permission:Universites.Create"));
         universities.AddChild(AcadmyPermissions.Universites.Edit, L("Permission:Universites.Edit"));
         universities.AddChild(AcadmyPermissions.Universites.Delete, L("Permission:Universites.Delete"));
+        universities.AddChild(AcadmyPermissions.Universites.View, L("Permission:Universites.View"));
     }
 
     private static LocalizableString L(string name)

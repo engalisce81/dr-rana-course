@@ -17,8 +17,10 @@ namespace Dev.Acadmy.Universites
         private readonly IRepository<University, Guid> _universityRepository;
         private readonly IMapper _mapper;
         private readonly ICurrentUser _currentUser;
-        public UniversityManager(ICurrentUser currentUser, IMapper mapper, IRepository<University, Guid> universityRepository)
+        private readonly CollegeManager _collegeManager;
+        public UniversityManager(CollegeManager collegeManager, ICurrentUser currentUser, IMapper mapper, IRepository<University, Guid> universityRepository)
         {
+            _collegeManager= collegeManager;
             _currentUser = currentUser;
             _universityRepository = universityRepository;
             _mapper = mapper;

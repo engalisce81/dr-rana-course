@@ -10,7 +10,7 @@ namespace Dev.Acadmy.AccountCustoms
         public bool Gender { get; set; }
         public Guid CollegeId { get; set; }
         public Guid UniversityId { get; set; }
-        public Guid GradeLevelId { get; set; }
+        public Guid? GradeLevelId { get; set; }
         public int AccountTypeKey { get; set; }
         public string? StudentMobileIP { get; set; }
     }
