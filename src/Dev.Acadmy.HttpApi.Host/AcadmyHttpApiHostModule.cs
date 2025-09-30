@@ -123,7 +123,7 @@ public class AcadmyHttpApiHostModule : AbpModule
       
         Configure<AbpMailKitOptions>(options =>
         {
-            options.SecureSocketOption = MailKit.Security.SecureSocketOptions.StartTls;
+            options.SecureSocketOption = MailKit.Security.SecureSocketOptions.SslOnConnect;
         });
 
     }
