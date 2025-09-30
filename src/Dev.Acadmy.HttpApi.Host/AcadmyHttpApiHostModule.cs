@@ -34,6 +34,8 @@ using Microsoft.AspNetCore.HttpOverrides;
 using OpenIddict.Server;
 using Volo.Abp.OpenIddict;
 using Microsoft.Extensions.FileProviders;
+using Castle.Core.Smtp;
+using Volo.Abp.Emailing.Smtp;
 
 namespace Dev.Acadmy;
 
@@ -104,6 +106,7 @@ public class AcadmyHttpApiHostModule : AbpModule
         {
             options.CheckLibs = false; // لو عايز تعطل الفحص
         });
+        //context.Services.Replace(ServiceDescriptor.Singleton<IEmailSender, SmtpEmailSender>() );
     }
 
     private void ConfigureAuthentication(ServiceConfigurationContext context)

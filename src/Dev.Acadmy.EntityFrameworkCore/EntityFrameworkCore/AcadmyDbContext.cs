@@ -20,6 +20,7 @@ using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
 using Dev.Acadmy.Courses;
 using Dev.Acadmy.Universites;
+using Dev.Acadmy.Emails;
 
 namespace Dev.Acadmy.EntityFrameworkCore;
 
@@ -80,6 +81,8 @@ public class AcadmyDbContext :
     public DbSet<University> Universities { get; set; } 
     public DbSet<GradeLevel> GradeLevels { get; set; }
     public DbSet<LectureStudent> LectureStudents { get; set; }
+    public DbSet<Email> Emails { get; set; }
+
 
 
     public AcadmyDbContext(DbContextOptions<AcadmyDbContext> options)

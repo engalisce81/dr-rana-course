@@ -22,13 +22,11 @@ namespace Dev.Acadmy.Emails
     {
         private readonly IEmailSender _emailSender;
         private readonly IdentityUserManager _userManager;
-        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IRepository<Email ,Guid> _emailRepository;
 
-        public EmailManager(IRepository<Email, Guid> emailRepository, IHttpContextAccessor httpContextAccessor, IdentityUserManager userManager , IEmailSender emailSender)
+        public EmailManager(IRepository<Email, Guid> emailRepository, IdentityUserManager userManager , IEmailSender emailSender)
         {
             _emailRepository = emailRepository;
-            _httpContextAccessor = httpContextAccessor;
             _userManager = userManager;
             _emailSender = emailSender;
         }
@@ -40,25 +38,60 @@ namespace Dev.Acadmy.Emails
             else return new ResponseApi<EmailDto> { Data = null, Success = true, Message = "the code no accept check email" };
             
         }
-        
+
 
 
         public async Task<ResponseApi<EmailDto>> SendNotificationToEmailAsync(CreateEmailDto input)
         {
+            if (input == null || string.IsNullOrWhiteSpace(input.EmailAdrees))
+                throw new UserFriendlyException("Email address is required");
+
             var emailAdrress = input.EmailAdrees.Trim();
+
+            // Check if email is already used by a user
+            var user = await _userManager.FindByEmailAsync(emailAdrress);
+            if (user != null)
+                throw new UserFriendlyException("The email is used by another account");
+
+            // Generate verification code
             var code = new Random().Next(1000, 9999).ToString();
-            var email = await _emailRepository.FirstOrDefaultAsync(x => x.EmailAdrees == input.EmailAdrees);
-            if (email != null) await _emailRepository.DeleteAsync(email);
-            await _emailRepository.InsertAsync(new Email { EmailAdrees = emailAdrress, Code = code});
+
+            // Remove old record if exists
+            var oldEmail = await _emailRepository.FirstOrDefaultAsync(x => x.EmailAdrees == emailAdrress);
+            if (oldEmail != null)
+                await _emailRepository.DeleteAsync(oldEmail);
+
+            // Insert new email record and capture it
+            var newEmail = await _emailRepository.InsertAsync(new Email
+            {
+                EmailAdrees = emailAdrress,
+                Code = code
+            }, autoSave: true);
+
+            // Send email
             try
-            { 
-                await _emailSender.SendAsync(emailAdrress, "Progres System Sent Code",code);
+            {
+                await _emailSender.SendAsync(emailAdrress, "Progres System Sent Code", code);
             }
             catch (Exception ex)
             {
-                throw new UserFriendlyException(ex.Message);
+                throw new UserFriendlyException($"Failed to send email: {ex.Message}");
             }
-            return new ResponseApi<EmailDto> { Data = new EmailDto { Id = email.Id, Code = email.Code, EmailAdrees = email.EmailAdrees, IsAccept = true }, Success = true, Message = "code success" }; ;
+
+            // Return response using the new email entity
+            return new ResponseApi<EmailDto>
+            {
+                Data = new EmailDto
+                {
+                    Id = newEmail.Id,
+                    Code = newEmail.Code,
+                    EmailAdrees = newEmail.EmailAdrees,
+                    IsAccept = false
+                },
+                Success = true,
+                Message = "Code sent successfully"
+            };
         }
+
     }
 }
