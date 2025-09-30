@@ -75,5 +75,11 @@ namespace Dev.Acadmy.Questions
             await _QuestionAnswerRepository.DeleteAsync(QuestionAnswer);
             return new ResponseApi<bool> { Data = true, Success = true, Message = "delete succeess" };
         }
+
+        public async Task DeleteByQuestionId(Guid questionId)
+        {
+            var answers = await (await _QuestionAnswerRepository.GetQueryableAsync()).Where(x => x.QuestionId == questionId).ToListAsync();
+            await _QuestionAnswerRepository.DeleteManyAsync(answers);
+        }
     }
 }

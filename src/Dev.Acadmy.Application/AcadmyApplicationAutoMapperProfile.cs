@@ -39,6 +39,8 @@ public class AcadmyApplicationAutoMapperProfile : Profile
 
         // Question
         CreateMap<Question, QuestionDto>();
+
+        // QuestionDto -> Question (لو عايز تـ update direct)
         CreateMap<CreateUpdateQuestionDto, Question>();
 
         // QuestionAnswer

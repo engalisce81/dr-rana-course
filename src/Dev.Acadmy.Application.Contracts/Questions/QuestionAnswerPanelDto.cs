@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace Dev.Acadmy.Questions
 {
-    public class CreateUpdateQuestionAnswerDto
+    public class QuestionAnswerPanelDto
     {
+        public Guid Id { get; set; }
         public string Answer { get; set; }
         public bool IsCorrect { get; set; }
-        public Guid? QuestionId { get; set; }
     }
 }

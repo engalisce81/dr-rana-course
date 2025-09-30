@@ -15,8 +15,6 @@ using Dev.Acadmy.Response;
 using Dev.Acadmy.Questions;
 using Volo.Abp;
 using Dev.Acadmy.MediaItems;
-using static Dev.Acadmy.Permissions.AcadmyPermissions;
-
 namespace Dev.Acadmy.Lectures
 {
     public class LectureManager:DomainService
@@ -138,7 +136,61 @@ namespace Dev.Acadmy.Lectures
             };
             return new ResponseApi <QuizDetailsDto> { Data = dto, Success = true, Message = "find success" };
         }
-        
+
+        public async Task<ResponseApi<LectureWithQuizzesDto>> GetLectureWithQuizzesAsync(Guid lectureId)
+        {
+            var lecture =await (await _lectureRepository.GetQueryableAsync())
+                .Include(l => l.Quizzes)
+                    .ThenInclude(q => q.Questions)
+                        .ThenInclude(qq => qq.QuestionAnswers)
+                .Include(l => l.Quizzes)
+                    .ThenInclude(q => q.Questions)
+                        .ThenInclude(qq => qq.QuestionType) // 👈 عشان نجيب اسم النوع
+                .FirstOrDefaultAsync(l => l.Id == lectureId);
+
+            if (lecture == null)
+            {
+                return new ResponseApi<LectureWithQuizzesDto>
+                {
+                    Data = null,
+                    Success = false,
+                    Message = "Lecture not found"
+                };
+            }
+
+            var dto = new LectureWithQuizzesDto
+            {
+                Id = lecture.Id,
+                Title = lecture.Title,
+                Quizzes = lecture.Quizzes.Select(q => new QuizWithQuestionsDto
+                {
+                    Id = q.Id,
+                    Title = q.Title,
+                    Questions = q.Questions.Select(ques => new QuestionWithAnswersDto
+                    {
+                        Id = ques.Id,
+                        Title = ques.Title,
+                        Score = ques.Score,
+                        QuestionTypeId = ques.QuestionTypeId,           
+                        QuestionTypeName = ques.QuestionType?.Name?? "",     
+                        Answers = ques.QuestionAnswers.Select(ans => new QuestionAnswerPanelDto
+                        {
+                            Id = ans.Id,
+                            Answer = ans.Answer,
+                            IsCorrect = ans.IsCorrect
+                        }).ToList()
+                    }).ToList()
+                }).ToList()
+            };
+
+            return new ResponseApi<LectureWithQuizzesDto>
+            {
+                Data = dto,
+                Success = true,
+                Message = "Lecture loaded successfully"
+            };
+        }
+
 
     }
 }

@@ -13,5 +13,6 @@ namespace Dev.Acadmy.Questions
         public Guid QuizId { get; set; }
         public Guid QuestionBankId { get; set; }
         public int Score { get; set; }
+        public ICollection<CreateUpdateQuestionAnswerDto> Answers { get; set; } = new List<CreateUpdateQuestionAnswerDto>();
     }
 }

@@ -34,6 +34,6 @@ namespace Dev.Acadmy.Questions
         [Authorize]
         public async Task<PagedResultDto<LookupDto>> GetListQuestionBanksAsync() => await _questionManager.GetListQuestionBanksAsync();
         [Authorize]
-        public async Task<PagedResultDto<LookupDto>> GetListQuizzesAsync() => await _questionManager.GetListQuizzesAsync();
+        public async Task<PagedResultDto<LookupDto>> GetListQuizzesAsync(Guid lecId) => await _questionManager.GetListQuizzesAsync(lecId);
     }
 }
