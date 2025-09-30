@@ -36,11 +36,14 @@ using Volo.Abp.OpenIddict;
 using Microsoft.Extensions.FileProviders;
 using Castle.Core.Smtp;
 using Volo.Abp.Emailing.Smtp;
+using Volo.Abp.MailKit;
+using Volo.Abp.Emailing; // هذا مصدر AbpSmtpEmailSenderOptions
 
 namespace Dev.Acadmy;
 
 
-[DependsOn(
+[DependsOn( 
+    typeof(AbpMailKitModule),
     typeof(AcadmyHttpApiModule),
     typeof(AbpAutofacModule),
     typeof(AbpAspNetCoreMultiTenancyModule),
@@ -123,10 +126,10 @@ public class AcadmyHttpApiHostModule : AbpModule
         //    options.Domain = "smtp.gmail.com";
         //});
 
-        //Configure<AbpMailKitOptions>(options =>
-        //{
-        //    options.SecureSocketOption = MailKit.Security.SecureSocketOptions.StartTls;
-        //});
+        Configure<AbpMailKitOptions>(options =>
+        {
+            options.SecureSocketOption = MailKit.Security.SecureSocketOptions.StartTls;
+        });
 
     }
 
