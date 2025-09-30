@@ -37,7 +37,8 @@ using Microsoft.Extensions.FileProviders;
 using Castle.Core.Smtp;
 using Volo.Abp.Emailing.Smtp;
 using Volo.Abp.MailKit;
-using Volo.Abp.Emailing; // هذا مصدر AbpSmtpEmailSenderOptions
+using Volo.Abp.Emailing;
+using Volo.Abp.Settings; // هذا مصدر AbpSmtpEmailSenderOptions
 
 namespace Dev.Acadmy;
 
@@ -110,22 +111,16 @@ public class AcadmyHttpApiHostModule : AbpModule
         {
             options.CheckLibs = false; // لو عايز تعطل الفحص
         });
+        Configure<AbpSettingOptions>(options =>
+        {
+            options.ValueProviders.Clear();
 
-        // الحصول على القيم من Environment Variables أو appsettings
-        var smtpPassword = configuration["ABP_MAILING_SMTP__PASSWORD"]
-                         ?? "rfyuvybdbrziowgs"; // قيمة افتراضية للطوارئ
-
-        //Configure<AbpSmtpEmailSenderOptions>(options =>
-        //{
-        //    options.Host = "smtp.gmail.com";
-        //    options.Port = 587;
-        //    options.UserName = "alisce81@gmail.com";
-        //    options.Password = smtpPassword;
-        //    options.EnableSsl = true;
-        //    options.UseDefaultCredentials = false;
-        //    options.Domain = "smtp.gmail.com";
-        //});
-
+            // إضافة مقدمي القيم بدون تشفير
+            options.ValueProviders.Add<ConfigurationSettingValueProvider>();
+            options.ValueProviders.Add<GlobalSettingValueProvider>();
+            options.ValueProviders.Add<DefaultValueSettingValueProvider>();
+        });
+      
         Configure<AbpMailKitOptions>(options =>
         {
             options.SecureSocketOption = MailKit.Security.SecureSocketOptions.StartTls;
