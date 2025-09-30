@@ -39,6 +39,7 @@ using Volo.Abp.Emailing.Smtp;
 
 namespace Dev.Acadmy;
 
+
 [DependsOn(
     typeof(AcadmyHttpApiModule),
     typeof(AbpAutofacModule),
@@ -106,7 +107,27 @@ public class AcadmyHttpApiHostModule : AbpModule
         {
             options.CheckLibs = false; // لو عايز تعطل الفحص
         });
-        //context.Services.Replace(ServiceDescriptor.Singleton<IEmailSender, SmtpEmailSender>() );
+
+        // الحصول على القيم من Environment Variables أو appsettings
+        var smtpPassword = configuration["ABP_MAILING_SMTP__PASSWORD"]
+                         ?? "rfyuvybdbrziowgs"; // قيمة افتراضية للطوارئ
+
+        //Configure<AbpSmtpEmailSenderOptions>(options =>
+        //{
+        //    options.Host = "smtp.gmail.com";
+        //    options.Port = 587;
+        //    options.UserName = "alisce81@gmail.com";
+        //    options.Password = smtpPassword;
+        //    options.EnableSsl = true;
+        //    options.UseDefaultCredentials = false;
+        //    options.Domain = "smtp.gmail.com";
+        //});
+
+        //Configure<AbpMailKitOptions>(options =>
+        //{
+        //    options.SecureSocketOption = MailKit.Security.SecureSocketOptions.StartTls;
+        //});
+
     }
 
     private void ConfigureAuthentication(ServiceConfigurationContext context)
