@@ -31,8 +31,7 @@ namespace Dev.Acadmy.Emails
                     // إعدادات متقدمة للاتصال
                     client.Timeout = 60000; // 60 ثانية
 
-                    await client.ConnectAsync("smtp.gmail.com", 465, true);
-                    await client.AuthenticateAsync("alisce81@gmail.com", "rfyuvybdbrziowgs");
+                    await client.ConnectAsync("smtp.sendgrid.net", 587, MailKit.Security.SecureSocketOptions.StartTls); await client.AuthenticateAsync("alisce81@gmail.com", "rfyuvybdbrziowgs");
                     await client.SendAsync(message);
                     await client.DisconnectAsync(true);
                 }

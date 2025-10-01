@@ -121,10 +121,10 @@ public class AcadmyHttpApiHostModule : AbpModule
             options.ValueProviders.Add<DefaultValueSettingValueProvider>();
         });
       
-        Configure<AbpMailKitOptions>(options =>
-        {
-            options.SecureSocketOption = MailKit.Security.SecureSocketOptions.Auto;
-        });
+        //Configure<AbpMailKitOptions>(options =>
+        //{
+        //    options.SecureSocketOption = MailKit.Security.SecureSocketOptions.Auto;
+        //});
 
     }
 
