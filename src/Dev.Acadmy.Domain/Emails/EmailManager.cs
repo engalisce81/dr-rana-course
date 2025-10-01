@@ -20,11 +20,11 @@ namespace Dev.Acadmy.Emails
   
     public class EmailManager: DomainService
     {
-        private readonly IEmailSender _emailSender;
+        private readonly DirectMailKitManager _emailSender;
         private readonly IdentityUserManager _userManager;
         private readonly IRepository<Email ,Guid> _emailRepository;
 
-        public EmailManager(IRepository<Email, Guid> emailRepository, IdentityUserManager userManager , IEmailSender emailSender)
+        public EmailManager(IRepository<Email, Guid> emailRepository, IdentityUserManager userManager , DirectMailKitManager emailSender)
         {
             _emailRepository = emailRepository;
             _userManager = userManager;
@@ -71,7 +71,7 @@ namespace Dev.Acadmy.Emails
             // Send email
             try
             {
-                await _emailSender.SendAsync(emailAdrress, "Progres System Sent Code", code);
+                await _emailSender.SendEmailAsync(emailAdrress, "Progres System Sent Code", code);
             }
             catch (Exception ex)
             {
