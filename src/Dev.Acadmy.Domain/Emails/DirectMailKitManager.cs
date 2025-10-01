@@ -52,7 +52,7 @@ namespace Dev.Acadmy.Emails
                             await client.ConnectAsync("smtp.gmail.com", 465, true);
                         }
 
-                        await client.AuthenticateAsync("alisce81@gmail.com", "كلمة_المرور_الجديدة"); // استخدم App Password هنا
+                        await client.AuthenticateAsync("alisce81@gmail.com", "rfyuvybdbrziowgs"); // استخدم App Password هنا
                         await client.SendAsync(message);
                         await client.DisconnectAsync(true);
 
