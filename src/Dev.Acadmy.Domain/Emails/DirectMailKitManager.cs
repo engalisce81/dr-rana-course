@@ -22,59 +22,40 @@ namespace Dev.Acadmy.Emails
 
         public async Task SendEmailAsync(string to, string subject, string body)
         {
-            for (int attempt = 1; attempt <= 3; attempt++)
+            try
             {
-                try
+                var message = new MimeMessage();
+
+                // ⬇️ يمكنك استخدام أي بريد كمرسل (ليس بالضرورة الذي سجلت به)
+                message.From.Add(new MailboxAddress("Progres System", "alisce81@gmail.com"));
+                message.To.Add(new MailboxAddress("", to));
+                message.Subject = subject;
+                message.Body = new TextPart("plain") { Text = body };
+
+                using (var client = new SmtpClient())
                 {
-                    var message = new MimeMessage();
-                    message.From.Add(new MailboxAddress("Progres System", "alisce81@gmail.com"));
-                    message.To.Add(new MailboxAddress("", to));
-                    message.Subject = subject;
-                    message.Body = new TextPart("plain") { Text = body };
+                    client.Timeout = 30000;
 
-                    using (var client = new SmtpClient())
-                    {
-                        client.Timeout = 60000;
+                    // ⬇️ إعدادات Brevo مع معلوماتك
+                    await client.ConnectAsync("smtp-relay.brevo.com", 587, MailKit.Security.SecureSocketOptions.StartTls);
 
-                        // تجاهل التحقق من الشهادة SSL (لأغراض التصحيح فقط)
-                        client.ServerCertificateValidationCallback = (s, c, h, e) => true;
+                    // ⬇️ استخدم معلوماتك بالضبط كما حصلت عليها
+                    await client.AuthenticateAsync("98477c001@smtp-brevo.com", "nH6Zq2IkGExXOL1D");
 
-                        // حاول الاتصال بمنفذ 587 أولاً، ثم 465
-                        try
-                        {
-                            _logger.LogInformation("محاولة الاتصال عبر المنفذ 587...");
-                            await client.ConnectAsync("smtp.gmail.com", 587, MailKit.Security.SecureSocketOptions.StartTls);
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogWarning($"فشل الاتصال عبر المنفذ 587: {ex.Message}");
-                            _logger.LogInformation("محاولة الاتصال عبر المنفذ 465...");
-                            await client.ConnectAsync("smtp.gmail.com", 465, true);
-                        }
-
-                        await client.AuthenticateAsync("alisce81@gmail.com", "rfyuvybdbrziowgs"); // استخدم App Password هنا
-                        await client.SendAsync(message);
-                        await client.DisconnectAsync(true);
-
-                        _logger.LogInformation($"✅ تم إرسال البريد بنجاح إلى: {to}");
-                        return;
-                    }
+                    await client.SendAsync(message);
+                    await client.DisconnectAsync(true);
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, $"❌ فشل محاولة الإرسال {attempt} إلى: {to}");
-                    if (attempt < 3)
-                    {
-                        await Task.Delay(2000 * attempt); // انتظر متزايد
-                    }
-                    else
-                    {
-                        throw new UserFriendlyException($"فشل إرسال البريد بعد 3 محاولات. الخطأ: {ex.Message}");
-                    }
-                }
+
+                _logger.LogInformation($"✅ تم إرسال البريد عبر Brevo إلى: {to}");
             }
-
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"❌ فشل إرسال البريد عبر Brevo إلى: {to}");
+                throw new UserFriendlyException($"فشل إرسال البريد: {ex.Message}");
+            }
         }
+
+    
     }
 }
 
