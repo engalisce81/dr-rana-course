@@ -69,14 +69,14 @@ namespace Dev.Acadmy.Emails
             }, autoSave: true);
 
             // Send email
-            try
-            {
-                await _emailSender.SendEmailAsync(emailAdrress, "Progres System Sent Code", code);
-            }
-            catch (Exception ex)
-            {
-                throw new UserFriendlyException($"Failed to send email: {ex.Message}");
-            }
+            //try
+            //{
+            //    await _emailSender.SendEmailAsync(emailAdrress, "Progres System Sent Code", code);
+            //}
+            //catch (Exception ex)
+            //{
+            //    throw new UserFriendlyException($"Failed to send email: {ex.Message}");
+            //}
 
             // Return response using the new email entity
             return new ResponseApi<EmailDto>
