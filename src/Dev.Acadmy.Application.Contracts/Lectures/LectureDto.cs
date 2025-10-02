@@ -18,6 +18,7 @@ namespace Dev.Acadmy.Lectures
         public string ChapterName { get; set; }
         public int QuizTime { get; set; }
         public int QuizTryCount { get; set; }
+        public int QuizCount {  get; set; }
         public bool IsVisible { get; set; }
     }
 }

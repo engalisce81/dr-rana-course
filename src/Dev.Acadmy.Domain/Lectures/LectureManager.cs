@@ -41,9 +41,13 @@ namespace Dev.Acadmy.Lectures
 
         public async Task<ResponseApi<LectureDto>> GetAsync(Guid id)
         {
-            var lecture = await _lectureRepository.FirstOrDefaultAsync(x => x.Id == id);
+            var lecture = await (await _lectureRepository.GetQueryableAsync()).Include(x=>x.Quizzes).Include(x=>x.Chapter).FirstOrDefaultAsync(x => x.Id == id);
             if (lecture == null) return new ResponseApi<LectureDto> { Data = null, Success = false, Message = "Not found lecture" };
             var dto = _mapper.Map<LectureDto>(lecture);
+            dto.QuizCount = lecture.Quizzes.Count();
+            dto.CourseId = lecture.Chapter.CourseId;
+            dto.QuizTime = lecture?.Quizzes?.FirstOrDefault()?.QuizTime?? 0;
+            dto.QuizTryCount = lecture.QuizTryCount;
             return new ResponseApi<LectureDto> { Data = dto, Success = true, Message = "find succeess" };
         }
 
@@ -51,14 +55,66 @@ namespace Dev.Acadmy.Lectures
         {
             var roles = await _userRepository.GetRolesAsync(_currentUser.GetId());
             var queryable = await _lectureRepository.GetQueryableAsync();
-            if (!string.IsNullOrWhiteSpace(search)) queryable = queryable.Include(x=>x.Chapter).Where(c => c.Content.ToUpper().Contains(search.ToUpper()));
+
+            // لو فى بحث
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                queryable = queryable
+                    .Include(x => x.Chapter)
+                    .Include(x => x.Quizzes)
+                    .Where(c => c.Content.ToUpper().Contains(search.ToUpper()));
+            }
+            else
+            {
+                queryable = queryable
+                    .Include(x => x.Chapter)
+                    .Include(x => x.Quizzes);
+            }
+
+            // فلترة حسب الدور
+            if (!roles.Any(x => x.Name.ToUpper() == RoleConsts.Admin.ToUpper()))
+            {
+                queryable = queryable.Where(c => c.CreatorId == _currentUser.GetId());
+            }
+
+            // totalCount بعد الفلترة
             var totalCount = await AsyncExecuter.CountAsync(queryable);
-            var lectures = new List<Lecture>();
-            if (roles.Any(x=>x.Name.ToUpper() == RoleConsts.Admin.ToUpper())) lectures = await AsyncExecuter.ToListAsync(queryable.OrderBy(c => c.CreationTime).Skip((pageNumber - 1) * pageSize).Take(pageSize));
-            else lectures = await AsyncExecuter.ToListAsync(queryable.Where(c => c.CreatorId == _currentUser.GetId()).OrderBy(c => c.CreationTime).Skip((pageNumber - 1) * pageSize).Take(pageSize));
-            var lectureDtos = _mapper.Map<List<LectureDto>>(lectures);
+
+            // البيانات مع التصفح
+            var lectures = await AsyncExecuter.ToListAsync(
+                queryable
+                    .OrderBy(c => c.CreationTime)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+            );
+
+            var lectureDtos = new List<LectureDto>();
+
+            foreach (var l in lectures)
+            {
+                var dto = new LectureDto
+                {
+                    Id = l.Id,
+                    ChapterId = l.ChapterId,
+                    ChapterName = l.Chapter.Name,
+                    Content = l.Content,
+                    Title = l.Title,
+                    VideoUrl = l.VideoUrl,
+                    CourseId = l.Chapter.CourseId,
+                    IsVisible = l.IsVisible,
+                    QuizCount = l.Quizzes.Count(),
+                    QuizTime = l?.Quizzes?.FirstOrDefault()?.QuizTime ?? 0,
+                    QuizTryCount = l.QuizTryCount
+                };
+
+                dto.PdfUrl = (await _mediaItemManager.GetAsync(dto.Id))?.Url ?? string.Empty;
+
+                lectureDtos.Add(dto);
+            }
+
             return new PagedResultDto<LectureDto>(totalCount, lectureDtos);
         }
+
 
         public async Task<ResponseApi<LectureDto>> CreateAsync(CreateUpdateLectureDto input)
         {
