@@ -47,7 +47,7 @@ namespace Dev.Acadmy.Lectures
             dto.QuizCount = lecture.Quizzes.Count();
             dto.CourseId = lecture.Chapter.CourseId;
             dto.QuizTime = lecture?.Quizzes?.FirstOrDefault()?.QuizTime?? 0;
-            dto.QuizTryCount = lecture.QuizTryCount;
+            dto.QuizTryCount = lecture?.QuizTryCount??0;
             return new ResponseApi<LectureDto> { Data = dto, Success = true, Message = "find succeess" };
         }
 
@@ -104,7 +104,7 @@ namespace Dev.Acadmy.Lectures
                     IsVisible = l.IsVisible,
                     QuizCount = l.Quizzes.Count(),
                     QuizTime = l?.Quizzes?.FirstOrDefault()?.QuizTime ?? 0,
-                    QuizTryCount = l.QuizTryCount
+                    QuizTryCount = l?.QuizTryCount?? 0
                 };
 
                 dto.PdfUrl = (await _mediaItemManager.GetAsync(dto.Id))?.Url ?? string.Empty;

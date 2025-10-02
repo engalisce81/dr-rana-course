@@ -10,6 +10,8 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Users;
 using Volo.Abp.Domain.Services;
 using Microsoft.EntityFrameworkCore;
+using Volo.Abp.Identity;
+using Volo.Abp.Data;
 namespace Dev.Acadmy.Universites
 {
     public class UniversityManager:DomainService
@@ -18,8 +20,10 @@ namespace Dev.Acadmy.Universites
         private readonly IMapper _mapper;
         private readonly ICurrentUser _currentUser;
         private readonly CollegeManager _collegeManager;
-        public UniversityManager(CollegeManager collegeManager, ICurrentUser currentUser, IMapper mapper, IRepository<University, Guid> universityRepository)
+        private readonly IIdentityUserRepository _userRepository;
+        public UniversityManager(IIdentityUserRepository userRepository, CollegeManager collegeManager, ICurrentUser currentUser, IMapper mapper, IRepository<University, Guid> universityRepository)
         {
+            _userRepository = userRepository;
             _collegeManager= collegeManager;
             _currentUser = currentUser;
             _universityRepository = universityRepository;
@@ -65,7 +69,11 @@ namespace Dev.Acadmy.Universites
         public async Task<ResponseApi<bool>> DeleteAsync(Guid id)
         {
             var university = await _universityRepository.FirstOrDefaultAsync(x => x.Id == id);
+            var users = await _userRepository.GetListAsync();
+            foreach (var user in users) if (user.GetProperty<Guid>(SetPropConsts.UniversityId) == id) await _userRepository.DeleteAsync(id); 
             if (university == null) return new ResponseApi<bool> { Data = false, Success = false, Message = "Not found university" };
+             var colleges = await _collegeManager.GetCollegesListAsync(id);
+            foreach (var college in colleges.Items) { await _collegeManager.DeleteAsync(college.Id); }
             await _universityRepository.DeleteAsync(university);
             return new ResponseApi<bool> { Data = true, Success = true, Message = "delete succeess" };
         }

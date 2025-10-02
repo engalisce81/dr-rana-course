@@ -39,19 +39,32 @@ namespace Dev.Acadmy.Universites
 
         public async Task<ResponseApi<SubjectDto>> GetAsync(Guid id)
         {
-            var subject = await _subjectRepository.FirstOrDefaultAsync(x => x.Id == id);
+            var subject = await (await _subjectRepository.GetQueryableAsync()).Include(x=>x.GradeLevel).ThenInclude(x=>x.College).ThenInclude(x=>x.University).FirstOrDefaultAsync(x => x.Id == id);
             if (subject == null) return new ResponseApi<SubjectDto> { Data = null, Success = false, Message = "Not found subject" };
             var dto = _mapper.Map<SubjectDto>(subject);
+            dto.CollegeId = subject?.GradeLevel?.CollegeId?? new Guid();
+            dto.CollegeName =subject?.GradeLevel?.College.Name?? string.Empty;
+            dto.UniversityId = subject?.GradeLevel?.College?.UniversityId ?? new Guid();
+            dto.UniversityName = subject?.GradeLevel?.College?.University?.Name?? string.Empty;
             return new ResponseApi<SubjectDto> { Data = dto, Success = true, Message = "find succeess" };
         }
 
         public async Task<PagedResultDto<SubjectDto>> GetListAsync(int pageNumber, int pageSize, string? search)
         {
             var queryable = await _subjectRepository.GetQueryableAsync();
-            if (!string.IsNullOrWhiteSpace(search)) queryable = queryable.Where(c => c.Name.Contains(search));
+            if (!string.IsNullOrWhiteSpace(search)) queryable = queryable.Include(x => x.GradeLevel).ThenInclude(x => x.College).ThenInclude(x => x.University).Where(c => c.Name.Contains(search));
             var totalCount = await AsyncExecuter.CountAsync(queryable);
-            var subjects = await AsyncExecuter.ToListAsync(queryable.OrderByDescending(c => c.CreationTime).Skip((pageNumber - 1) * pageSize).Take(pageSize));
-            var subjectDtos = _mapper.Map<List<SubjectDto>>(subjects);
+            var subjects = await AsyncExecuter.ToListAsync(queryable.Include(x => x.GradeLevel).ThenInclude(x => x.College).ThenInclude(x => x.University).OrderByDescending(c => c.CreationTime).Skip((pageNumber - 1) * pageSize).Take(pageSize));
+            var subjectDtos = new List<SubjectDto>();
+            foreach(var subject in subjects)
+            {
+                var dto = _mapper.Map<SubjectDto>(subject);
+                dto.CollegeId = subject?.GradeLevel?.CollegeId ?? new Guid();
+                dto.CollegeName = subject?.GradeLevel?.College.Name ?? string.Empty;
+                dto.UniversityId = subject?.GradeLevel?.College?.UniversityId ?? new Guid();
+                dto.UniversityName = subject?.GradeLevel?.College?.University?.Name ?? string.Empty;
+                subjectDtos.Add(dto);
+            } 
             return new PagedResultDto<SubjectDto>(totalCount, subjectDtos);
         }
 
@@ -82,7 +95,7 @@ namespace Dev.Acadmy.Universites
             return new ResponseApi<bool> { Data = true, Success = true, Message = "delete succeess" };
         }
 
-        public async Task<PagedResultDto<LookupDto>> GetSubjectsListAsync()
+        public async Task<PagedResultDto<LookupDto>> GetSubjectsListAsync( )
         {
             var currentUser = await _userRepository.GetAsync(_currentUser.GetId());
             var collegeId = currentUser.GetProperty<Guid?>(SetPropConsts.CollegeId);
@@ -100,7 +113,6 @@ namespace Dev.Acadmy.Universites
         {
             var currentUser = await _userRepository.GetAsync(_currentUser.GetId());
             var collegeId = currentUser.GetProperty<Guid?>(SetPropConsts.CollegeId);
-
             var gradeLevelIds = await (await _gradeLevelRepository.GetQueryableAsync())
                 .Where(x => x.CollegeId == collegeId)
                 .Select(x => x.Id)
@@ -122,6 +134,32 @@ namespace Dev.Acadmy.Universites
 
             return new PagedResultDto<LookupDto>(subjectDtos.Count, subjectDtos);
         }
+
+        public async Task<PagedResultDto<LookupDto>> GetSubjectsWithCollegeListAsync(Guid collegeId)
+        {
+            var gradeLevelIds = await (await _gradeLevelRepository.GetQueryableAsync())
+                .Where(x => x.CollegeId == collegeId)
+                .Select(x => x.Id)
+                .ToListAsync();
+
+            if (!gradeLevelIds.Any())
+                return new PagedResultDto<LookupDto>(0, new List<LookupDto>());
+
+            var queryable = (await _subjectRepository.GetQueryableAsync())
+                .Include(x => x.GradeLevel)
+                .Where(s => gradeLevelIds.Contains((Guid)s.GradeLevelId));
+
+            var subjects = await queryable.ToListAsync();
+
+            if (!subjects.Any())
+                return new PagedResultDto<LookupDto>(0, new List<LookupDto>());
+
+            var subjectDtos = _mapper.Map<List<LookupDto>>(subjects);
+
+            return new PagedResultDto<LookupDto>(subjectDtos.Count, subjectDtos);
+        }
+
+
 
     }
 }

@@ -19,10 +19,12 @@ namespace Dev.Acadmy.Universites
         private readonly IMapper _mapper;
         private readonly ICurrentUser _currentUser;
         private readonly GradeLevelManager _gradeLevelManager;
+        private readonly SubjectManager _subjectManager;
         private readonly IRepository<University, Guid> _universityRepository;
         private readonly IRepository<Term, Guid> _termRepository;
-        public CollegeManager(IRepository<Term, Guid> termRepository, IRepository<University, Guid> universityRepository, GradeLevelManager gradeLevelManager, ICurrentUser currentUser, IMapper mapper, IRepository<College,Guid> collegeRepository) 
+        public CollegeManager(SubjectManager subjectManager, IRepository<Term, Guid> termRepository, IRepository<University, Guid> universityRepository, GradeLevelManager gradeLevelManager, ICurrentUser currentUser, IMapper mapper, IRepository<College,Guid> collegeRepository) 
         {
+            _subjectManager = subjectManager;
             _termRepository = termRepository;
             _universityRepository = universityRepository;
             _gradeLevelManager = gradeLevelManager;
@@ -33,7 +35,7 @@ namespace Dev.Acadmy.Universites
 
         public async Task<ResponseApi<CollegeDto>> GetAsync(Guid id)
         {
-            var college = await _collegeRepository.FirstOrDefaultAsync(x => x.Id == id);
+            var college = await (await _collegeRepository.GetQueryableAsync()).Include(x=>x.University).FirstOrDefaultAsync(x => x.Id == id);
             if (college == null)  return  new ResponseApi<CollegeDto> { Data = null, Success = false, Message = "Not found college" };
             var dto = _mapper.Map<CollegeDto>(college);
             return new ResponseApi<CollegeDto> { Data = dto, Success = true, Message = "find succeess" };
@@ -41,10 +43,10 @@ namespace Dev.Acadmy.Universites
 
         public async Task<PagedResultDto<CollegeDto>> GetListAsync(int pageNumber, int pageSize, string? search)
         {
-            var queryable = await _collegeRepository.GetQueryableAsync();
-            if (!string.IsNullOrWhiteSpace(search)) queryable = queryable.Where(c => c.Name.Contains(search));  
+            var queryable = (await _collegeRepository.GetQueryableAsync());
+            if (!string.IsNullOrWhiteSpace(search)) queryable = queryable.Include(x => x.University).Where(c => c.Name.Contains(search));  
             var totalCount = await AsyncExecuter.CountAsync(queryable);
-            var colleges = await AsyncExecuter.ToListAsync( queryable.OrderByDescending(c => c.CreationTime).Skip((pageNumber - 1) * pageSize) .Take(pageSize) );
+            var colleges = await AsyncExecuter.ToListAsync(queryable.Include(x => x.University).OrderByDescending(c => c.CreationTime).Skip((pageNumber - 1) * pageSize) .Take(pageSize) );
             var collegeDtos = _mapper.Map<List<CollegeDto>>(colleges);
             return new PagedResultDto<CollegeDto>(totalCount, collegeDtos);
         }
@@ -74,6 +76,8 @@ namespace Dev.Acadmy.Universites
         {
             var college = await (await _collegeRepository.GetQueryableAsync()).Include(x => x.GradeLevels).FirstOrDefaultAsync(x => x.Id == id);
             if (college == null) return new ResponseApi<bool> { Data = false, Success = false, Message = "Not found college" };
+            var subjects = await _subjectManager.GetSubjectsWithCollegeListAsync(id);
+            foreach(var subject in subjects.Items) await _subjectManager.DeleteAsync(subject.Id);
             await DeleteGraeLevels(college.GradeLevels.ToList());
             await _collegeRepository.DeleteAsync(college);
             return new ResponseApi<bool> { Data = true, Success = true, Message = "delete succeess" };

@@ -14,6 +14,11 @@ namespace Dev.Acadmy.Universites
         public string? TermName { get; set; }
         public Guid? GradeLevelId { get; set; }
         public string? GradeLevelName { get; set; }  
+        public Guid CollegeId { get; set; }
+        public string CollegeName { get; set; }
+        public Guid UniversityId {  get; set; }
+        public string UniversityName { get;set; }
+
 
     }
 }
