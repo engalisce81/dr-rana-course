@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Dev.Acadmy.LookUp;
 using Dev.Acadmy.Response;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -74,6 +75,12 @@ namespace Dev.Acadmy.Courses
             var courseinfos = await AsyncExecuter.ToListAsync(queryable.OrderByDescending(c => c.CreationTime));
             var courseinfoDtos = _mapper.Map<List<LookupDto>>(courseinfos);
             return new PagedResultDto<LookupDto>(totalCount, courseinfoDtos);
+        }
+
+        public async Task DeleteCourseInfoByCourseId(Guid courseId)
+        {
+            var infos = await (await _courseinfoRepository.GetQueryableAsync()).Where(x=>x.CourseId == courseId).ToListAsync();
+            await _courseinfoRepository.DeleteManyAsync(infos);
         }
     }
 }

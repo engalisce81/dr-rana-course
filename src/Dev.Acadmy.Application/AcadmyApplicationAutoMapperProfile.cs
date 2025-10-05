@@ -7,6 +7,7 @@ using Dev.Acadmy.MediaItems;
 using Dev.Acadmy.Questions;
 using Dev.Acadmy.Quizzes;
 using Dev.Acadmy.Universites;
+using System.Linq;
 
 namespace Dev.Acadmy;
 
@@ -18,7 +19,7 @@ public class AcadmyApplicationAutoMapperProfile : Profile
         CreateMap<CreateUpdateCollegeDto, College>();
 
         // Course
-        CreateMap<Courses.Course, CourseDto>();
+        CreateMap<Courses.Course, CourseDto>().ForMember(des=>des.Infos ,src=>src.MapFrom(x=>x.CourseInfos.Select(m=>m.Name)));
         CreateMap<CreateUpdateCourseDto, Courses.Course>();
 
         // Chapter

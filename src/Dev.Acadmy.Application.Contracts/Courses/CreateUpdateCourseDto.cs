@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 namespace Dev.Acadmy.Courses
 {
     public class CreateUpdateCourseDto
@@ -12,5 +13,6 @@ namespace Dev.Acadmy.Courses
         public bool IsLifetime { get; set; } = false;
         public int? DurationInDays { get; set; } // null if lifetime
         public Guid? SubjectId { get; set; }
+        public ICollection<string> Infos { get; set; }= new List<string>();
     }
 }

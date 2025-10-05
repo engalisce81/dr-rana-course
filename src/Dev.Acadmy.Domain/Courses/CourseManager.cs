@@ -46,11 +46,13 @@ namespace Dev.Acadmy.Courses
 
         public async Task<ResponseApi<CourseDto>> GetAsync(Guid id)
         {
-            var course = await _courseRepository.FirstOrDefaultAsync(x => x.Id == id);
+            var course = await(await _courseRepository.GetQueryableAsync()).Include(x=>x.CourseInfos).FirstOrDefaultAsync(x => x.Id == id);
             if (course == null) return new ResponseApi<CourseDto> { Data = null, Success = false, Message = "Not found Course" };
             var dto = _mapper.Map<CourseDto>(course);
             var mediaItem = await _mediaItemManager.GetAsync(dto.Id );
             dto.LogoUrl = mediaItem?.Url ?? "";
+            dto.Infos = course.CourseInfos.Select(x=>x.Name).ToList();
+            
             return new ResponseApi<CourseDto> { Data = dto, Success = true, Message = "find succeess" };
         }
 
@@ -59,10 +61,10 @@ namespace Dev.Acadmy.Courses
             var roles = await _userRepository.GetRolesAsync(_currentUser.GetId());
             var queryable = await _courseRepository.GetQueryableAsync();
             if (!string.IsNullOrWhiteSpace(search)) queryable = queryable.Include(x=>x.College).Where(c => c.Name.Contains(search));
-            var totalCount = await AsyncExecuter.CountAsync(queryable);
             var courses = new List<Course>();
+            var totalCount = await AsyncExecuter.CountAsync(queryable);
             if (roles.Any(x=>x.Name.ToUpper() ==RoleConsts.Admin.ToUpper() )) courses = await AsyncExecuter.ToListAsync(queryable.Include(x => x.College).OrderByDescending(c => c.Name).Skip((pageNumber - 1) * pageSize).Take(pageSize));
-            else courses = await AsyncExecuter.ToListAsync(queryable.Where(c => c.UserId == _currentUser.GetId()).Include(x => x.College).Include(x=>x.Subject).OrderByDescending(c => c.Name).Skip((pageNumber - 1) * pageSize).Take(pageSize));
+            else courses = await AsyncExecuter.ToListAsync(queryable.Where(c => c.UserId == _currentUser.GetId()).Include(x => x.College).Include(x=>x.Subject).Include(x=>x.CourseInfos).OrderByDescending(c => c.Name).Skip((pageNumber - 1) * pageSize).Take(pageSize));
             var courseDtos = _mapper.Map<List<CourseDto>>(courses);
             foreach (var courseDto in courseDtos)
             {
@@ -80,6 +82,7 @@ namespace Dev.Acadmy.Courses
             var collegeId = currentUser.GetProperty<Guid>(SetPropConsts.CollegeId);
             course.CollegeId = collegeId;
             var result = await _courseRepository.InsertAsync(course);
+            foreach (var info in input.Infos) await _courseInfoManager.CreateAsync(new CreateUpdateCourseInfoDto { Name = info, CourseId = result.Id });
             await _mediaItemManager.CreateAsync(new CreateUpdateMediaItemDto { Url =input.LogoUrl, RefId = result.Id,IsImage=true});
             await _questionBankManager.CreateAsync(new CreateUpdateQuestionBankDto {CreatorId =result.UserId, CourseId = result.Id, Name = $"{result.Name} Question Bank" });
             var dto = _mapper.Map<CourseDto>(result);
@@ -95,6 +98,8 @@ namespace Dev.Acadmy.Courses
             var collegeId = currentUser.GetProperty<Guid>(SetPropConsts.CollegeId);
             course.CollegeId = collegeId;
             var result = await _courseRepository.UpdateAsync(course);
+            await _courseInfoManager.DeleteCourseInfoByCourseId(course.Id);
+            foreach (var info in input.Infos) await _courseInfoManager.CreateAsync(new CreateUpdateCourseInfoDto { Name = info, CourseId = result.Id });
             await _mediaItemManager.UpdateAsync(id, new CreateUpdateMediaItemDto { Url = input.LogoUrl, RefId = result.Id ,IsImage=true });
             var questionBank = await _questionBankManager.GetByCourse(id);
             if(questionBank !=null) await _questionBankManager.UpdateAsync(questionBank.Id, new CreateUpdateQuestionBankDto { CreatorId=result.UserId,CourseId = result.Id, Name = $"{result.Name} Question Bank" });
