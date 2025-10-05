@@ -45,7 +45,7 @@ namespace Dev.Acadmy.Courses
         public async Task<ResponseApi<CourseInfoDto>> CreateAsync(CreateUpdateCourseInfoDto input)
         {
             var courseinfo = _mapper.Map<CourseInfo>(input);
-            var result = await _courseinfoRepository.InsertAsync(courseinfo);
+            var result = await _courseinfoRepository.InsertAsync(courseinfo,autoSave:true);
             var dto = _mapper.Map<CourseInfoDto>(result);
             return new ResponseApi<CourseInfoDto> { Data = dto, Success = true, Message = "save succeess" };
         }

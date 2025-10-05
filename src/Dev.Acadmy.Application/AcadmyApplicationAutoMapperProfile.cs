@@ -19,7 +19,7 @@ public class AcadmyApplicationAutoMapperProfile : Profile
         CreateMap<CreateUpdateCollegeDto, College>();
 
         // Course
-        CreateMap<Courses.Course, CourseDto>().ForMember(des=>des.Infos ,src=>src.MapFrom(x=>x.CourseInfos.Select(m=>m.Name)));
+        CreateMap<Courses.Course, CourseDto>();
         CreateMap<CreateUpdateCourseDto, Courses.Course>();
 
         // Chapter

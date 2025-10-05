@@ -51,7 +51,7 @@ namespace Dev.Acadmy.Courses
             var dto = _mapper.Map<CourseDto>(course);
             var mediaItem = await _mediaItemManager.GetAsync(dto.Id );
             dto.LogoUrl = mediaItem?.Url ?? "";
-            dto.Infos = course.CourseInfos.Select(x=>x.Name).ToList();
+            foreach(var info in course.CourseInfos) dto.Infos.Add(info.Name);
             
             return new ResponseApi<CourseDto> { Data = dto, Success = true, Message = "find succeess" };
         }
