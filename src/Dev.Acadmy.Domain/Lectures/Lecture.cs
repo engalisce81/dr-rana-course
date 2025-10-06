@@ -18,6 +18,7 @@ namespace Dev.Acadmy.Lectures
         public Guid ChapterId { get; set; }
         public bool IsVisible { get; set; }
         public int QuizTryCount { get; set; }
+
         [ForeignKey(nameof(ChapterId))]
         public Chapters.Chapter Chapter { get; set; }
         public ICollection<Quiz> Quizzes { get; set; } = new List<Quiz>();  

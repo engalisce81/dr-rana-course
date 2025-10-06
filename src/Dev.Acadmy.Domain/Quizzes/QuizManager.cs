@@ -80,7 +80,7 @@ namespace Dev.Acadmy.Quizzes
             var quizDB = await _quizRepository.FirstOrDefaultAsync(x => x.Id == id);
             if (quizDB == null) return new ResponseApi<QuizDto> { Data = null, Success = false, Message = "Not found quiz" };
             var quiz = _mapper.Map(input, quizDB);
-            var result = await _quizRepository.UpdateAsync(quiz);
+            var result = await _quizRepository.UpdateAsync(quiz,autoSave:true);
             var dto = _mapper.Map<QuizDto>(result);
             return new ResponseApi<QuizDto> { Data = dto, Success = true, Message = "update succeess" };
         }
@@ -89,7 +89,7 @@ namespace Dev.Acadmy.Quizzes
         {
             var quiz = await _quizRepository.FirstOrDefaultAsync(x => x.Id == id);
             if (quiz == null) return new ResponseApi<bool> { Data = false, Success = false, Message = "Not found quiz" };
-            await _quizRepository.DeleteAsync(quiz);
+            await _quizRepository.DeleteAsync(quiz ,autoSave:true);
             return new ResponseApi<bool> { Data = true, Success = true, Message = "delete succeess" };
         }
 

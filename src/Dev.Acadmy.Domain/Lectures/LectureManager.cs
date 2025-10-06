@@ -27,8 +27,10 @@ namespace Dev.Acadmy.Lectures
         private readonly IRepository<Quiz ,Guid> _quizRepository;
         private readonly MediaItemManager _mediaItemManager;
         private readonly IRepository<LectureStudent ,Guid> _lectureStudentRepository;
-        public LectureManager(IRepository<LectureStudent, Guid> lectureStudentRepository, MediaItemManager mediaItemManager, IRepository<Quiz,Guid> quizRepository, QuizManager quizManager, ICurrentUser currentUser, IIdentityUserRepository userRepository, IMapper mapper, IRepository<Lecture,Guid> lectureRepository)
+        private readonly IRepository<LectureTry , Guid> _lectureTryRepository;
+        public LectureManager(IRepository<LectureTry, Guid> lectureTryRepository, IRepository<LectureStudent, Guid> lectureStudentRepository, MediaItemManager mediaItemManager, IRepository<Quiz,Guid> quizRepository, QuizManager quizManager, ICurrentUser currentUser, IIdentityUserRepository userRepository, IMapper mapper, IRepository<Lecture,Guid> lectureRepository)
         {
+            _lectureTryRepository = lectureTryRepository;
             _lectureStudentRepository = lectureStudentRepository;
             _mediaItemManager = mediaItemManager;
             _quizRepository = quizRepository;
@@ -132,8 +134,6 @@ namespace Dev.Acadmy.Lectures
             var lectureDB = await _lectureRepository.FirstOrDefaultAsync(x => x.Id == id);
             if (lectureDB == null) return new ResponseApi<LectureDto> { Data = null, Success = false, Message = "Not found lecture" };
             var lecture = _mapper.Map(input, lectureDB);
-            await _quizManager.DeletQuizesByLectureId(id);
-            await CreateQuizes(input, id);
             var result = await _lectureRepository.UpdateAsync(lecture);
             var mediaItemDB = await _mediaItemManager.UpdateAsync(id ,new CreateUpdateMediaItemDto { IsImage=false , RefId = result.Id ,Url = input.PdfUrl});
             var dto = _mapper.Map<LectureDto>(result);
@@ -153,27 +153,36 @@ namespace Dev.Acadmy.Lectures
 
         public async Task CreateQuizes(CreateUpdateLectureDto input , Guid lectureId)
         {
-            for (var i = 0; i < input.QuizCount; i++) await _quizManager.CreateAsync(new CreateUpdateQuizDto { CreaterId = _currentUser.GetId(), QuizTime = input.QuizTime, LectureId = lectureId,Title = input.Title + "Quiz " + i, Description = input.Content });
+            for (var i = 0; i < input.QuizCount; i++) await _quizManager.CreateAsync(new CreateUpdateQuizDto { CreaterId = _currentUser.GetId(), QuizTime = input.QuizTime, LectureId = lectureId,Title = input.Title+" " + "Quiz " + i, Description = input.Content });
         }
+        // here
         public async Task<ResponseApi<QuizDetailsDto>> GetQuizDetailsAsync(Guid quizId)
         {
+         
             var queryable = await _quizRepository.GetQueryableAsync();
-
             var quiz = await queryable
+                .Include(x=>x.Lecture)
                 .Include(q => q.Questions)
                     .ThenInclude(q => q.QuestionAnswers)
                 .Include(q => q.Questions)
                     .ThenInclude(q => q.QuestionType)
                 .FirstOrDefaultAsync(q => q.Id == quizId);
 
-            if (quiz == null)
-                throw new UserFriendlyException("Quiz not found");
+            if (quiz == null) throw new UserFriendlyException("Quiz not found");
+            var tryCount = await _lectureTryRepository.FirstOrDefaultAsync(x=>x.LectureId ==(Guid) quiz.LectureId && x.UserId ==_currentUser.GetId());
+            if(tryCount == null) tryCount =  await _lectureTryRepository.InsertAsync(new LectureTry { LectureId =(Guid) quiz.LectureId, UserId = _currentUser.GetId(), MyTryCount = 1 },autoSave:true);
+            else
+            {
+                if (tryCount.MyTryCount >= quiz.Lecture.QuizTryCount) throw new UserFriendlyException("You have reached the maximum number of attempts for this quiz.");
+                tryCount.MyTryCount += 1;
+                await _lectureTryRepository.UpdateAsync(tryCount ,autoSave:true);
+            }
             var dto = new QuizDetailsDto
             {
                 QuizId = quiz.Id,
                 Title = quiz.Title,
                 QuizTime = quiz.QuizTime,
-                QuizTryCount = quiz.QuizTryCount,
+                QuizTryCount = quiz?.Lecture?.QuizTryCount ?? 0,
                 Questions = quiz.Questions.Select(q => new QuestionDetailesDto
                 {
                     QuestionId = q.Id,

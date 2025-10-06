@@ -37,4 +37,25 @@ namespace Dev.Acadmy.Configuration
 
         }
     }
+    
+    public class LectureTryConfiguration : IEntityTypeConfiguration<LectureTry>
+    {
+        public void Configure(EntityTypeBuilder<LectureTry> builder)
+        {
+            builder.ToTable(AcadmyConsts.DbTablePrefix + "LectureTrys" + AcadmyConsts.DbTablePrefix);
+            builder.ConfigureByConvention();
+
+            
+
+            builder.HasOne(x => x.User)
+                   .WithMany()
+                   .HasForeignKey(x => x.UserId)
+                   .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(x => x.Lecture)
+                   .WithMany()
+                   .HasForeignKey(x => x.LectureId)
+                   .OnDelete(DeleteBehavior.Cascade);
+        }
+    }
 }

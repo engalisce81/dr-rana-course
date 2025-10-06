@@ -13,7 +13,6 @@ public static class AcadmyPermissions
         public const string View = Default + ".View";
         public const string Publish = Default + ".Publish";
     }
-    
 
     public static class Universites
     {
@@ -58,8 +57,6 @@ public static class AcadmyPermissions
         public const string Delete = Default + ".Delete";
         public const string View = Default + ".View";
     }
-
-
 
     public static class CourseStudents
     {

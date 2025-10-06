@@ -8,12 +8,10 @@ namespace Dev.Acadmy.Quizzes
 {
     public class CreateUpdateQuizDto
     {
-        public Guid CreaterId { get; set; }
+        public Guid? CreaterId { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }
         public int QuizTime { get; set; }
         public Guid? LectureId { get; set; }
-
-
     }
 }

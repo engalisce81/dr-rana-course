@@ -28,8 +28,10 @@ namespace Dev.Acadmy.Chapters
         private readonly IRepository<QuizStudent, Guid> _quizStudentRepository;
         private readonly MediaItemManager _mediaItemManager;
         private readonly IRepository<LectureStudent ,Guid> _lectureStudentRepository;
-        public ChapterManager(LectureManager lectureManger, IRepository<LectureStudent, Guid> lectureStudentRepository, MediaItemManager mediaItemManager, IRepository<QuizStudent, Guid> quizStudentRepository, ICurrentUser currentUser, IIdentityUserRepository userRepository, IMapper mapper, IRepository<Chapter> chapterRepository)
+        private readonly IRepository<LectureTry, Guid> _lectureTryRepository;
+        public ChapterManager(IRepository<LectureTry, Guid> lectureTryRepository, LectureManager lectureManger, IRepository<LectureStudent, Guid> lectureStudentRepository, MediaItemManager mediaItemManager, IRepository<QuizStudent, Guid> quizStudentRepository, ICurrentUser currentUser, IIdentityUserRepository userRepository, IMapper mapper, IRepository<Chapter> chapterRepository)
         {
+            _lectureTryRepository = lectureTryRepository;
             _lectureManger = lectureManger;
             _lectureStudentRepository = lectureStudentRepository;
             _mediaItemManager = mediaItemManager;
@@ -107,13 +109,13 @@ namespace Dev.Acadmy.Chapters
             var userId = _currentUser.GetId();
             var currentUser = await _userRepository.GetAsync(userId);
 
-            // الكويزات اللي الطالب جاوبها قبل كده
-            var answeredQuizIds = await (await _quizStudentRepository.GetQueryableAsync())
-                .Where(qs => qs.UserId == userId)
-                .Select(qs => qs.QuizId)
-                .ToListAsync();
+            //// الكويزات اللي الطالب جاوبها قبل كده
+            //var answeredQuizId = await (await _lectureTryRepository.GetQueryableAsync())
+            //    .Where(qs => qs.UserId == userId)
+            //    .Select(qs => qs.LectureId)
+            //    .FirstOrDefaultAsync();
 
-            // محاولات الطالب في كل محاضرة
+            //// محاولات الطالب في كل محاضرة
             var lectureAttempts = await (await _lectureStudentRepository.GetQueryableAsync())
                 .Where(ls => ls.UserId == userId)
                 .ToListAsync();
@@ -142,12 +144,11 @@ namespace Dev.Acadmy.Chapters
                 foreach (var l in c.Lectures.Where(x => x.IsVisible))
                 {
                     var media = await _mediaItemManager.GetAsync(l.Id);
-
+                    var userTryCount = await _lectureTryRepository.FirstOrDefaultAsync(x => x.UserId == _currentUser.GetId() && x.LectureId == l.Id);
+                    if (userTryCount == null) userTryCount = new LectureTry { MyTryCount=0};
                     var lectureStudent = lectureAttempts.FirstOrDefault(x => x.LectureId == l.Id);
-
                     int attemptsUsed = lectureStudent?.AttemptsUsed ?? 0;
                     int maxAttempts = lectureStudent?.MaxAttempts ?? l.Quizzes.Count;
-
                     // كل الكويزات بالترتيب
                     var quizzes = l.Quizzes.OrderBy(q => q.CreationTime).ToList();
 
@@ -158,21 +159,20 @@ namespace Dev.Acadmy.Chapters
                         int index = attemptsUsed;
 
                         // لو المحاولات تعدت عدد الكويزات أو وصلت للحد الأقصى → رجع آخر كويز
-                        if (index >= quizzes.Count || attemptsUsed >= maxAttempts)
+                        if (index >= quizzes.Count || userTryCount.MyTryCount >= maxAttempts)
                         {
                             index = quizzes.Count - 1;
                         }
 
                         var nextQuiz = quizzes[index];
-
                         quizDto = new QuizInfoDto
                         {
                             QuizId = nextQuiz.Id,
                             Title = nextQuiz.Title,
                             QuestionsCount = nextQuiz.Questions.Count,
                             QuizTryCount = maxAttempts,
-                            TryedCount = attemptsUsed,
-                            AlreadyAnswer = answeredQuizIds.Contains(nextQuiz.Id)
+                            TryedCount = userTryCount.MyTryCount,
+                            AlreadyAnswer = userTryCount.MyTryCount > 0? true : false,
                         };
                     }
                     else
