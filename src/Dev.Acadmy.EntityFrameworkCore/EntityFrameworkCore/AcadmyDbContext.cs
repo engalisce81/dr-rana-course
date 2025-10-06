@@ -82,7 +82,7 @@ public class AcadmyDbContext :
     public DbSet<GradeLevel> GradeLevels { get; set; }
     public DbSet<LectureStudent> LectureStudents { get; set; }
     public DbSet<Email> Emails { get; set; }
-    public DbSet<LectureTry> LectureTries { get; set; }
+    public DbSet<LectureTry> LectureTrys { get; set; }
 
 
 

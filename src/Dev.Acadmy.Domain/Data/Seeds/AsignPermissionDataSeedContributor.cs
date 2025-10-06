@@ -26,6 +26,7 @@ namespace Course.Data.Seeds
         }
         public async Task SeedAsync(DataSeedContext context)
         {
+          //  await _permissionManager
         }
 
         public async Task StudentCoursePermission()

@@ -8,6 +8,7 @@ public class AcadmyPermissionDefinitionProvider : PermissionDefinitionProvider
 {
     public override void Define(IPermissionDefinitionContext context)
     {
+       // context.RemoveGroup(AcadmyPermissions.GroupName);
         var group = context.AddGroup(AcadmyPermissions.GroupName);
 
         var colleges = group.AddPermission(AcadmyPermissions.Colleges.Default, L("Permission:Colleges"));
@@ -115,11 +116,6 @@ public class AcadmyPermissionDefinitionProvider : PermissionDefinitionProvider
         universities.AddChild(AcadmyPermissions.Universites.Delete, L("Permission:Universites.Delete"));
         universities.AddChild(AcadmyPermissions.Universites.View, L("Permission:Universites.View"));
 
-        var quizes = group.AddPermission(AcadmyPermissions.Quizs.Default, L("Permission:Quizes"));
-        quizes.AddChild(AcadmyPermissions.Quizs.Create, L("Permission:Quizes.Create"));
-        quizes.AddChild(AcadmyPermissions.Quizs.Edit, L("Permission:Quizes.Edit"));
-        quizes.AddChild(AcadmyPermissions.Quizs.Delete, L("Permission:Quizes.Delete"));
-        quizes.AddChild(AcadmyPermissions.Quizs.View, L("Permission:Quizes.View"));
     }
 
     private static LocalizableString L(string name)
