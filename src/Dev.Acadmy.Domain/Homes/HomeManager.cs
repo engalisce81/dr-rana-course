@@ -1,4 +1,5 @@
 ﻿using Dev.Acadmy.Courses;
+using Dev.Acadmy.Response;
 using Dev.Acadmy.Universites;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -25,8 +26,10 @@ namespace Dev.Acadmy.Homes
         private readonly IRepository<University,Guid> _universityRepository;
         private readonly IRepository<College, Guid> _collegeRepository;
         private readonly IRepository<GradeLevel, Guid> _gradeLevelRepository;
-        public HomeManager(IRepository<College, Guid> collegeRepository, IRepository<GradeLevel, Guid> gradeLevelRepository, IRepository<University, Guid> universityRepository, ICurrentUser currentUser, IdentityUserManager userManager, IIdentityUserRepository userRepository, IRepository<Courses.Course, Guid> courseRepository , IRepository<CourseStudent, Guid> courseStudentRepository)
+        private readonly IRepository<Term, Guid> _termRepository;
+        public HomeManager(IRepository<Term, Guid> termRepository, IRepository<College, Guid> collegeRepository, IRepository<GradeLevel, Guid> gradeLevelRepository, IRepository<University, Guid> universityRepository, ICurrentUser currentUser, IdentityUserManager userManager, IIdentityUserRepository userRepository, IRepository<Courses.Course, Guid> courseRepository , IRepository<CourseStudent, Guid> courseStudentRepository)
         {
+            _termRepository = termRepository;
             _collegeRepository = collegeRepository;
             _gradeLevelRepository = gradeLevelRepository;
             _universityRepository = universityRepository;
@@ -36,6 +39,45 @@ namespace Dev.Acadmy.Homes
             _userRepository = userRepository;
             _userManager = userManager;
         }
+
+        public async Task<ResponseApi<string>> UpdateActiveTermAsync(Guid id)
+        {
+            // ✅ جلب الترم المطلوب
+            var term = await _termRepository.FirstOrDefaultAsync(x => x.Id == id);
+            if (term == null)
+                throw new UserFriendlyException("This term was not found.");
+
+            // ✅ تعطيل باقي الترمات
+            var allTerms = await _termRepository.GetListAsync();
+            foreach (var t in allTerms)
+            {
+                t.IsActive = (t.Id == id);
+            }
+
+            // ✅ تحديث كل الترمات دفعة واحدة
+            await _termRepository.UpdateManyAsync(allTerms, autoSave: true);
+
+            // ✅ جلب كل المستخدمين
+            var users = await _userRepository.GetListAsync();
+
+            foreach (var user in users)
+            {
+                // ✅ تعيين الترم الحالي لجميع المستخدمين
+                user.SetProperty(SetPropConsts.TermId, id);
+            }
+
+            // ✅ تحديث المستخدمين دفعة واحدة
+            await _userRepository.UpdateManyAsync(users, autoSave: true);
+
+            // ✅ إرجاع النتيجة
+            return new ResponseApi<string>
+            {
+                Data = term.Name,
+                Success = true,
+                Message = $"Term '{term.Name}' has been set as active successfully."
+            };
+        }
+
 
         public async Task<HomesDto> GetHomeStatisticsAsync()
         {
@@ -115,6 +157,7 @@ namespace Dev.Acadmy.Homes
             var needSubPercentage = totalStudents == 0 ? 0 : Math.Round((double)needSubscribeCount / totalStudents * 100, 2);
             var coursePercentage = 100;
             var members = await GetCollegeGradeLevelMembersAsync();
+            var growth = await GetMyStudentsGrowthOverYearAsync();
             return new HomesDto
             {
                 NameFiledOne = "Number of Students",
@@ -130,6 +173,8 @@ namespace Dev.Acadmy.Homes
                 PercentageFiledThree = coursePercentage,
 
                 Members = members,
+                GrowthOverYear = growth,
+
             };
         }
 
@@ -250,6 +295,54 @@ namespace Dev.Acadmy.Homes
 
             return result;
         }
+
+
+        private async Task<GrowthOverYearDto> GetMyStudentsGrowthOverYearAsync()
+        {
+            var currentYear = DateTime.UtcNow.Year;
+            var teacherId = _currentUser.GetId(); // المعلّم الحالي
+
+            // ✅ جلب جميع الكورسات التي يملكها المعلّم
+            var teacherCourses = await (await _courseRepository.GetQueryableAsync())
+                .Where(c => c.UserId == teacherId)
+                .Select(c => c.Id)
+                .ToListAsync();
+
+            // ✅ جلب جميع الطلاب المشتركين في كورسات المعلّم (حتى لو فاضي)
+            var courseStudents = new List<CourseStudent>();
+
+            if (teacherCourses.Any())
+            {
+                courseStudents = await (await _courseStudentRepository.GetQueryableAsync())
+                    .Where(cs => teacherCourses.Contains(cs.CourseId))
+                    .ToListAsync();
+            }
+
+            // ✅ تجهيز قائمة الأشهر من 1 إلى 12
+            var months = Enumerable.Range(1, 12).ToList();
+            var result = new GrowthOverYearDto();
+
+            foreach (var month in months)
+            {
+                var monthStart = new DateTime(currentYear, month, 1);
+                var nextMonthStart = month == 12
+                    ? new DateTime(currentYear + 1, 1, 1)
+                    : new DateTime(currentYear, month + 1, 1);
+
+                // ✅ عدد الطلاب الجدد خلال هذا الشهر (صفر لو مفيش)
+                var monthlyStudentCount = courseStudents.Count(cs =>
+                    cs.CreationTime >= monthStart && cs.CreationTime < nextMonthStart);
+
+                result.Students.Add(new MonthlyCountDto
+                {
+                    Month = monthStart.ToString("MMMM"),
+                    Count = monthlyStudentCount
+                });
+            }
+
+            return result;
+        }
+
 
 
     }

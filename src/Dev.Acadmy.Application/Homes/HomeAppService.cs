@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Dev.Acadmy.Response;
+using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,6 +16,9 @@ namespace Dev.Acadmy.Homes
         {
             _homeManager = homeManager;
         }
+        [Authorize]
+        public async Task<ResponseApi<string>> UpdateActiveTermAsync(Guid id) => await _homeManager.UpdateActiveTermAsync(id);
+
         [Authorize]
         public async Task<HomesDto> GetHomeStatisticsAsync() => await _homeManager.GetHomeStatisticsAsync();
         

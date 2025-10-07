@@ -46,6 +46,8 @@ namespace Dev.Acadmy.Lectures
             var lecture = await (await _lectureRepository.GetQueryableAsync()).Include(x=>x.Quizzes).Include(x=>x.Chapter).FirstOrDefaultAsync(x => x.Id == id);
             if (lecture == null) return new ResponseApi<LectureDto> { Data = null, Success = false, Message = "Not found lecture" };
             var dto = _mapper.Map<LectureDto>(lecture);
+            var lecPdf = await _mediaItemManager.GetAsync(id);
+            dto.PdfUrl = lecPdf?.Url ?? string.Empty;
             dto.QuizCount = lecture.Quizzes.Count();
             dto.CourseId = lecture.Chapter.CourseId;
             dto.QuizTime = lecture?.Quizzes?.FirstOrDefault()?.QuizTime?? 0;
