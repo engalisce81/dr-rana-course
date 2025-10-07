@@ -109,15 +109,15 @@ namespace Dev.Acadmy.Chapters
             var userId = _currentUser.GetId();
             var currentUser = await _userRepository.GetAsync(userId);
 
-            //// الكويزات اللي الطالب جاوبها قبل كده
-            //var answeredQuizId = await (await _lectureTryRepository.GetQueryableAsync())
-            //    .Where(qs => qs.UserId == userId)
-            //    .Select(qs => qs.LectureId)
-            //    .FirstOrDefaultAsync();
+            // ✅ الكويزات التي أجابها المستخدم مسبقاً
+            var answeredLectureIds = await (await _quizStudentRepository.GetQueryableAsync())
+                .Where(qs => qs.UserId == userId)
+                .Select(qs => qs.LectureId)
+                .ToListAsync();
 
-            //// محاولات الطالب في كل محاضرة
-            var lectureAttempts = await (await _lectureStudentRepository.GetQueryableAsync())
-                .Where(ls => ls.UserId == userId)
+            // ✅ كل محاولات المستخدم على المحاضرات
+            var lectureTries = await (await _lectureTryRepository.GetQueryableAsync())
+                .Where(lt => lt.UserId == userId)
                 .ToListAsync();
 
             var queryable = await _chapterRepository.GetQueryableAsync();
@@ -144,40 +144,52 @@ namespace Dev.Acadmy.Chapters
                 foreach (var l in c.Lectures.Where(x => x.IsVisible))
                 {
                     var media = await _mediaItemManager.GetAsync(l.Id);
-                    var userTryCount = await _lectureTryRepository.FirstOrDefaultAsync(x => x.UserId == _currentUser.GetId() && x.LectureId == l.Id);
-                    if (userTryCount == null) userTryCount = new LectureTry { MyTryCount=0};
-                    var lectureStudent = lectureAttempts.FirstOrDefault(x => x.LectureId == l.Id);
-                    int attemptsUsed = lectureStudent?.AttemptsUsed ?? 0;
-                    int maxAttempts = lectureStudent?.MaxAttempts ?? l.Quizzes.Count;
+
+                    // ✅ نحصل على سجل المحاولات للمستخدم في هذه المحاضرة
+                    var lectureTry = lectureTries.FirstOrDefault(x => x.LectureId == l.Id);
+                    if (lectureTry == null)
+                    {
+                        lectureTry = new LectureTry
+                        {
+                            LectureId = l.Id,
+                            UserId = userId,
+                            MyTryCount = 0
+                        };
+                    }
+
+                    // الحد الأقصى من المحاولات = عدد الكويزات في المحاضرة (أو أي قيمة أخرى حسب التصميم)
+                    int maxAttempts = l.Quizzes.Count > 0 ? l.Quizzes.Count : 1;
+
                     // كل الكويزات بالترتيب
                     var quizzes = l.Quizzes.OrderBy(q => q.CreationTime).ToList();
 
-                    QuizInfoDto quizDto = null;
+                    QuizInfoDto quizDto;
 
                     if (quizzes.Any())
                     {
-                        int index = attemptsUsed;
+                        int index = lectureTry.MyTryCount;
 
-                        // لو المحاولات تعدت عدد الكويزات أو وصلت للحد الأقصى → رجع آخر كويز
-                        if (index >= quizzes.Count || userTryCount.MyTryCount >= maxAttempts)
+                        // لو الطالب تجاوز عدد الكويزات أو وصل الحد الأقصى → أعطه آخر كويز
+                        if (index >= quizzes.Count || lectureTry.MyTryCount >= maxAttempts)
                         {
                             index = quizzes.Count - 1;
                         }
 
                         var nextQuiz = quizzes[index];
+
                         quizDto = new QuizInfoDto
                         {
                             QuizId = nextQuiz.Id,
                             Title = nextQuiz.Title,
                             QuestionsCount = nextQuiz.Questions.Count,
-                            QuizTryCount = maxAttempts,
-                            TryedCount = userTryCount.MyTryCount,
-                            AlreadyAnswer = userTryCount.MyTryCount > 0? true : false,
+                            QuizTryCount = l.QuizTryCount,
+                            TryedCount = lectureTry.MyTryCount,
+                            AlreadyAnswer = answeredLectureIds.Contains(l.Id)
                         };
                     }
                     else
                     {
-                        // لو المحاضرة مافيهاش كويزات أصلاً
+                        // لو المحاضرة مافيها كويزات
                         quizDto = new QuizInfoDto
                         {
                             QuizId = Guid.Empty,
@@ -213,6 +225,7 @@ namespace Dev.Acadmy.Chapters
 
             return new PagedResultDto<CourseChaptersDto>(totalCount, chapterInfoDtos);
         }
+
 
 
 
