@@ -10,6 +10,11 @@ using Volo.Abp.Identity;
 using Volo.Abp.Users;
 using Microsoft.EntityFrameworkCore;
 using Dev.Acadmy.Response;
+using Dev.Acadmy.MediaItems;
+using static Dev.Acadmy.Permissions.AcadmyPermissions;
+using static Volo.Abp.Identity.Settings.IdentitySettingNames;
+using Dev.Acadmy.Quizzes;
+using Dev.Acadmy.Lectures;
 
 
 namespace Dev.Acadmy.Courses
@@ -20,8 +25,14 @@ namespace Dev.Acadmy.Courses
         private readonly IMapper _mapper;
         private readonly IIdentityUserRepository _userRepository;
         private readonly ICurrentUser _currentUser;
-        public CourseStudentManager(ICurrentUser currentUser, IIdentityUserRepository userRepository, IMapper mapper, IRepository<CourseStudent> coursestudentRepository)
+        private readonly MediaItemManager _mediaItemManager;
+        private readonly IRepository<QuizStudent ,Guid> _quizStudentRepository;
+        private readonly IRepository<LectureTry, Guid> _lectureTryRepository;
+        public CourseStudentManager(IRepository<LectureTry, Guid> lectureTryRepository, IRepository<QuizStudent, Guid> quizStudentRepository, MediaItemManager mediaItemManager, ICurrentUser currentUser, IIdentityUserRepository userRepository, IMapper mapper, IRepository<CourseStudent> coursestudentRepository)
         {
+            _lectureTryRepository = lectureTryRepository;
+            _quizStudentRepository = quizStudentRepository;
+            _mediaItemManager = mediaItemManager;
             _currentUser = currentUser;
             _userRepository =userRepository;
             _coursestudentRepository = coursestudentRepository;
@@ -32,7 +43,11 @@ namespace Dev.Acadmy.Courses
         {
             var coursestudent = await _coursestudentRepository.FirstOrDefaultAsync(x => x.Id == id);
             if (coursestudent == null) return new ResponseApi<CourseStudentDto> { Data = null, Success = false, Message = "Not found coursestudent" };
+            var user = await _userRepository.GetAsync(coursestudent.UserId);
             var dto = _mapper.Map<CourseStudentDto>(coursestudent);
+            dto.Name = user.Name;
+            var medaiItem = await _mediaItemManager.GetAsync(coursestudent.UserId);
+            dto.LogoUrl = medaiItem?.Url??"";
             return new ResponseApi<CourseStudentDto> { Data = dto, Success = true, Message = "find succeess" };
         }
 
@@ -46,6 +61,13 @@ namespace Dev.Acadmy.Courses
             if (roles.Any(x => x.Name.ToUpper() == RoleConsts.Admin.ToUpper())) coursestudents = await AsyncExecuter.ToListAsync(queryable.Include(x => x.Course).Include(x => x.User).Where(x=>x.IsSubscibe == isSubscribe && x.CourseId == courseId).OrderByDescending(c => c.CreationTime).Skip((pageNumber - 1) * pageSize).Take(pageSize));
             else coursestudents = await AsyncExecuter.ToListAsync(queryable.Include(x => x.Course).Include(x => x.User).Where(c => c.Course.UserId == _currentUser.GetId() && c.IsSubscibe == isSubscribe && c.CourseId ==courseId).OrderByDescending(c => c.CreationTime).Skip((pageNumber - 1) * pageSize).Take(pageSize));
             var coursestudentDtos = _mapper.Map<List<CourseStudentDto>>(coursestudents);
+            foreach(var dto in coursestudentDtos)
+            {
+                var user = await _userRepository.GetAsync(dto.UserId);
+                dto.Name = user.Name;
+                var medaiItem = await _mediaItemManager.GetAsync(user.Id);
+                dto.LogoUrl = medaiItem?.Url ?? "";
+            }
             return new PagedResultDto<CourseStudentDto>(totalCount, coursestudentDtos);
         }
 
@@ -84,5 +106,62 @@ namespace Dev.Acadmy.Courses
             await _coursestudentRepository.DeleteAsync(coursestudent);
             return new ResponseApi<bool> { Data = true, Success = true, Message = "delete succeess" };
         }
+
+        public async Task<PagedResultDto<StudentDegreeByCourseDto>> GetStudentDegreByCourseAsync(int pageNumber, int pageSize, Guid courseId, Guid userId)
+        {
+            // 🟢 1. الاستعلام الأساسي
+            var query = await _quizStudentRepository.GetQueryableAsync();
+
+            var studentQuizzesQuery = query
+                .Include(x => x.Quiz)
+                    .ThenInclude(x => x.Lecture)
+                        .ThenInclude(x => x.Chapter)
+                            .ThenInclude(x => x.Course)
+                .Where(x => x.UserId == userId && x.Quiz.Lecture.Chapter.CourseId == courseId);
+
+            // 🟢 2. إجمالي السجلات
+            var totalCount = await studentQuizzesQuery.CountAsync();
+
+            // 🟢 3. تطبيق Pagination
+            var studentQuizzes = await studentQuizzesQuery
+                .OrderByDescending(x => x.CreationTime)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // 🟢 4. تجهيز البيانات
+            var user = await _userRepository.GetAsync(userId);
+            var mediaItem = await _mediaItemManager.GetAsync(userId);
+
+            var result = new StudentDegreeByCourseDto
+            {
+                UserId = user.Id,
+                Name = user.Name,
+                LogoUrl = mediaItem?.Url ?? ""
+            };
+
+            foreach (var studentQuiz in studentQuizzes)
+            {
+                var lectureTry = await _lectureTryRepository.FirstOrDefaultAsync(x =>
+                    x.LectureId == studentQuiz.Quiz.LectureId && x.UserId == userId);
+
+                result.Quizzes.Add(new StudentQuizDto
+                {
+                    QuizName = studentQuiz.Quiz?.Title ?? string.Empty,
+                    LectureName = studentQuiz.Quiz?.Lecture?.Title ?? string.Empty,
+                    QuizScore = studentQuiz.Score,
+                    TryCount = lectureTry?.MyTryCount ?? 0
+                });
+            }
+
+            // 🟢 5. إرجاع النتيجة مع pagination
+            return new PagedResultDto<StudentDegreeByCourseDto>(
+                totalCount,
+                new List<StudentDegreeByCourseDto> { result }
+            );
+        }
+
+
+
     }
 }

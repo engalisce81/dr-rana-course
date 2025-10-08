@@ -65,9 +65,7 @@ namespace Dev.Acadmy.Universites
             var collegeDB = await (await _collegeRepository.GetQueryableAsync()).Include(x=>x.GradeLevels).FirstOrDefaultAsync(x => x.Id == id);
             if (collegeDB == null) return new ResponseApi<CollegeDto> { Data = null, Success = false, Message = "Not found college" };
             var college = _mapper.Map(input, collegeDB);
-            await DeleteGraeLevels(collegeDB.GradeLevels.ToList());
             var result = await _collegeRepository.UpdateAsync(college);
-            await CreateGraeLevels(input.GradeLevelCount,id);
             var dto = _mapper.Map<CollegeDto>(result);
             return new ResponseApi<CollegeDto> { Data = dto, Success = true, Message = "update succeess" };
         }

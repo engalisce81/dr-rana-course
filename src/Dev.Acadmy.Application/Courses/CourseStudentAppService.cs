@@ -26,5 +26,8 @@ namespace Dev.Acadmy.Courses
         public async Task<ResponseApi<CourseStudentDto>> UpdateAsync(Guid id, CreateUpdateCourseStudentDto input) => await _coursestudentManager.UpdateAsync(id, input);
         [Authorize(AcadmyPermissions.CourseStudents.Delete)]
         public async Task DeleteAsync(Guid id) => await _coursestudentManager.DeleteAsync(id);
+        [Authorize]
+        public async Task<PagedResultDto<StudentDegreeByCourseDto>> GetStudentDegreByCourseAsync(int pageNumber, int pageSize, Guid courseId, Guid userId) => await _coursestudentManager.GetStudentDegreByCourseAsync(pageNumber, pageSize, courseId, userId);
+
     }
 }

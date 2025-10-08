@@ -59,7 +59,6 @@ namespace Dev.Acadmy.Lectures
         {
             var roles = await _userRepository.GetRolesAsync(_currentUser.GetId());
             var queryable = await _lectureRepository.GetQueryableAsync();
-
             // لو فى بحث
             if (!string.IsNullOrWhiteSpace(search))
             {

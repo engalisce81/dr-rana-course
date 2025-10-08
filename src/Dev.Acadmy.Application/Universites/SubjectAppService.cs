@@ -31,8 +31,12 @@ namespace Dev.Acadmy.Universites
         public async Task DeleteAsync(Guid id) => await _subjectManager.DeleteAsync(id);
         [Authorize]
         public async Task<PagedResultDto<LookupDto>> GetSubjectsListAsync() => await _subjectManager.GetSubjectsListAsync();
+       
+        // to admin panel
         [Authorize]
-        public async Task<PagedResultDto<LookupDto>> GetSubjectsWithCollegeListAsync() => await _subjectManager.GetSubjectsWithCollegeListAsync();
+        public async Task<PagedResultDto<LookupDto>> GetSubjectsWithCollegeMobListAsync(Guid collegeId) => await _subjectManager.GetSubjectsWithCollegeMobListAsync(collegeId);
+        [Authorize]
+        public async Task<PagedResultDto<LookupDto>> GetSubjectsWithCollegeListAsync()=> await _subjectManager.GetSubjectsWithCollegeListAsync();
 
     }
 }
