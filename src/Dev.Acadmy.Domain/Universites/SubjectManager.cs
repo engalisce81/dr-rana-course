@@ -107,10 +107,15 @@ namespace Dev.Acadmy.Universites
             return new PagedResultDto<LookupDto>(subjectDtos.Count, subjectDtos);
         }
 
-        public async Task<PagedResultDto<LookupDto>> GetSubjectsWithCollegeMobListAsync(Guid collegeId)
+        public async Task<PagedResultDto<LookupDto>> GetSubjectsWithCollegeMobListAsync(Guid collegeId, Guid? gradelevelId)
         {
             var currentUser = await _userRepository.GetAsync(_currentUser.GetId());
-           // var collegeId = currentUser.GetProperty<Guid?>(SetPropConsts.CollegeId);
+
+            // ✅ تأكد من أن collegeId موجود
+            if (collegeId == Guid.Empty)
+                return new PagedResultDto<LookupDto>(0, new List<LookupDto>());
+
+            // ✅ 1. هات كل grade levels المرتبطة بالكلية
             var gradeLevelIds = await (await _gradeLevelRepository.GetQueryableAsync())
                 .Where(x => x.CollegeId == collegeId)
                 .Select(x => x.Id)
@@ -119,11 +124,19 @@ namespace Dev.Acadmy.Universites
             if (!gradeLevelIds.Any())
                 return new PagedResultDto<LookupDto>(0, new List<LookupDto>());
 
-            var queryable = (await _subjectRepository.GetQueryableAsync()).Include(x => x.GradeLevel)
+            // ✅ 2. بناء استعلام المواد
+            var queryable = (await _subjectRepository.GetQueryableAsync())
+                .Include(x => x.GradeLevel)
                 .Where(s => gradeLevelIds.Contains((Guid)s.GradeLevelId));
 
+            // ✅ 3. لو gradelevelId مش null فلتر عليها
+            if (gradelevelId.HasValue)
+                queryable = queryable.Where(s => s.GradeLevelId == gradelevelId.Value);
+
+            // ✅ 4. تنفيذ الاستعلام وتحويله إلى DTO
             var subjects = await queryable.ToListAsync();
-            if (!subjects.Any()) return new PagedResultDto<LookupDto>(0, new List<LookupDto>());
+            if (!subjects.Any())
+                return new PagedResultDto<LookupDto>(0, new List<LookupDto>());
 
             var subjectDtos = _mapper.Map<List<LookupDto>>(subjects);
             return new PagedResultDto<LookupDto>(subjectDtos.Count, subjectDtos);

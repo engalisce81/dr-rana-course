@@ -34,7 +34,7 @@ namespace Dev.Acadmy.Universites
        
         // to admin panel
         [Authorize]
-        public async Task<PagedResultDto<LookupDto>> GetSubjectsWithCollegeMobListAsync(Guid collegeId) => await _subjectManager.GetSubjectsWithCollegeMobListAsync(collegeId);
+        public async Task<PagedResultDto<LookupDto>> GetSubjectsWithCollegeMobListAsync(Guid collegeId, Guid? gradelevelId) => await _subjectManager.GetSubjectsWithCollegeMobListAsync(collegeId,  gradelevelId);
         [Authorize]
         public async Task<PagedResultDto<LookupDto>> GetSubjectsWithCollegeListAsync()=> await _subjectManager.GetSubjectsWithCollegeListAsync();
 

@@ -20,6 +20,8 @@ namespace Dev.Acadmy.Courses
         public string CollegeName { get; set; }
         public Guid? SubjectId { get; set; }
         public string? SubjectName { get; set; }
+        public Guid? GradelevelId { get; set; }
+        public string? GradelevelName { get; set; }
         public bool AlreadyJoin { get; set; }
         public bool AlreadyRequest { get; set; }
         public int ChapterCount { get; set; }
