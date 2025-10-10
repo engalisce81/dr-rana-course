@@ -20,6 +20,8 @@ namespace Dev.Acadmy.Courses
         public Guid? CollegeId { get; set; }
         public string CollegeName { get; set; }
         public Guid? SubjectId { get; set; }
+        public Guid? QuestionBankId { get; set; }
+        public Guid? ExamId { get; set; }   
         public string? SubjectName { get; set; } 
 
         // Visibility

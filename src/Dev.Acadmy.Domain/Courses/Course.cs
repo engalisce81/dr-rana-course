@@ -1,5 +1,6 @@
 ﻿
 using Dev.Acadmy.Chapters;
+using Dev.Acadmy.Exams;
 using Dev.Acadmy.Questions;
 using Dev.Acadmy.Universites;
 using System;
@@ -34,6 +35,7 @@ namespace Dev.Acadmy.Courses
         public QuestionBank QuestionBank { get; set; }
         [ForeignKey(nameof(SubjectId))]
         public Subject? Subject { get; set; }
+        public Exam? Exam { get; set; }
         public ICollection<Chapter>  Chapters { get; set; } = new List<Chapter>();
         public ICollection<CourseInfo> CourseInfos { get; set; } = new List<CourseInfo>();
     }

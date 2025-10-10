@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Dev.Acadmy.Exams;
 using Dev.Acadmy.Response;
 using System;
 using System.Collections.Generic;
@@ -14,8 +15,10 @@ namespace Dev.Acadmy.Questions
     {
         private readonly IRepository<QuestionBank> _questionbankRepository;
         private readonly IMapper _mapper;
-        public QuestionBankManager(IMapper mapper, IRepository<QuestionBank> questionbankRepository)
+        private readonly IRepository<Exam, Guid> _examRepositroy;
+        public QuestionBankManager(IRepository<Exam, Guid> examRepositroy, IMapper mapper, IRepository<QuestionBank> questionbankRepository)
         {
+            _examRepositroy = examRepositroy;
             _questionbankRepository = questionbankRepository;
             _mapper = mapper;
         }
@@ -44,7 +47,8 @@ namespace Dev.Acadmy.Questions
         {
             var questionbank = _mapper.Map<QuestionBank>(input);
             
-            var result = await _questionbankRepository.InsertAsync(questionbank);
+            var result = await _questionbankRepository.InsertAsync(questionbank,autoSave:true);
+            await  _examRepositroy.InsertAsync( new Exam { CourseId = input.CourseId ,Name = input.Name+" Exam" ,IsActive=false ,TimeExam = 0 } ,autoSave:true);
             var dto = _mapper.Map<QuestionBankDto>(result);
             return new ResponseApi<QuestionBankDto> { Data = dto, Success = true, Message = "save succeess" };
         }

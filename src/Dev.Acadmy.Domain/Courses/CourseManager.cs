@@ -64,7 +64,7 @@ namespace Dev.Acadmy.Courses
             var courses = new List<Course>();
             var totalCount = await AsyncExecuter.CountAsync(queryable);
             if (roles.Any(x=>x.Name.ToUpper() ==RoleConsts.Admin.ToUpper() )) courses = await AsyncExecuter.ToListAsync(queryable.Include(x => x.College).OrderByDescending(c => c.Name).Skip((pageNumber - 1) * pageSize).Take(pageSize));
-            else courses = await AsyncExecuter.ToListAsync(queryable.Where(c => c.UserId == _currentUser.GetId()).Include(x => x.College).Include(x=>x.Subject).Include(x=>x.CourseInfos).OrderByDescending(c => c.Name).Skip((pageNumber - 1) * pageSize).Take(pageSize));
+            else courses = await AsyncExecuter.ToListAsync(queryable.Where(c => c.UserId == _currentUser.GetId()).Include(x => x.College).Include(x=>x.Exam).Include(x=>x.QuestionBank).Include(x=>x.Subject).Include(x=>x.CourseInfos).OrderByDescending(c => c.Name).Skip((pageNumber - 1) * pageSize).Take(pageSize));
             var courseDtos = _mapper.Map<List<CourseDto>>(courses);
             foreach (var courseDto in courseDtos)
             {
