@@ -37,26 +37,46 @@ namespace Dev.Acadmy.Exams
             };
             foreach (var question in questionBank.Questions)
             {
-                if (question.ExamId == examId) examDto.ExamQuestions.Add(new ExamQuestions { Id = question.Id, IsSelected = true });
-                else examDto.ExamQuestions.Add(new ExamQuestions { Id = question.Id, IsSelected = false });
-                return examDto;
+                if (question.ExamId == examId) examDto.ExamQuestions.Add(new ExamQuestions { Id = question.Id,Tittle = question.Title ,IsSelected = true });
+                else examDto.ExamQuestions.Add(new ExamQuestions { Id = question.Id, Tittle = question.Title, IsSelected = false });
             }
             return examDto;
         }
 
-        public  async Task UpdateExam(Guid id, CreateUpdateExamDto input)
+        public async Task UpdateExam(Guid id, CreateUpdateExamDto input)
         {
             var exam = await _examRepository.GetAsync(id);
+
+            // تحديث بيانات الامتحان
             exam.Name = input.Name;
             exam.TimeExam = input.TimeExam;
             exam.IsActive = input.IsActive;
+
+            // 🟢 جلب جميع الأسئلة التابعة للامتحان الحالي
+            var allQuestions = await _questionRepository.GetListAsync();
+
+            var examQuestions = allQuestions.Where(q => q.ExamId == id).ToList();
+
+            // 🟠 إزالة الأسئلة اللي اتشالت
+            foreach (var oldQuestion in examQuestions.Where(q => !input.QuestionIds.Contains(q.Id)))
+            {
+                oldQuestion.ExamId = null;
+            }
+
+            // 🟢 إضافة الأسئلة الجديدة
             foreach (var questionId in input.QuestionIds)
             {
-                var question = await _questionRepository.GetAsync(questionId);
-                question.ExamId = id;
-                await _questionRepository.UpdateAsync(question,autoSave:true);
+                var question = allQuestions.FirstOrDefault(q => q.Id == questionId);
+                if (question != null)
+                    question.ExamId = id;
             }
-            await _examRepository.UpdateAsync(exam);
+
+            // ✅ تحديث جميع الأسئلة مرة واحدة (بدون autoSave لكل واحدة)
+            await _questionRepository.UpdateManyAsync(allQuestions, autoSave: true);
+
+            // ✅ حفظ التغييرات على الامتحان
+            await _examRepository.UpdateAsync(exam, autoSave: true);
         }
+
     }
 }

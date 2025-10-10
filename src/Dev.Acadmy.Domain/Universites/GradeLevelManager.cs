@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Dev.Acadmy.LookUp;
 using Dev.Acadmy.Response;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,15 +34,35 @@ namespace Dev.Acadmy.Universites
             return new ResponseApi<GradeLevelDto> { Data = dto, Success = true, Message = "find succeess" };
         }
 
-        public async Task<PagedResultDto<GradeLevelDto>> GetListAsync(int pageNumber, int pageSize, string? search)
+        public async Task<PagedResultDto<GradeLevelDto>> GetListAsync(int pageNumber, int pageSize, string? search, Guid collegeId)
         {
             var queryable = await _gradelevelRepository.GetQueryableAsync();
-            if (!string.IsNullOrWhiteSpace(search)) queryable = queryable.Where(c => c.Name.Contains(search));
+
+            // 🟢 فلترة حسب الكلية أولاً
+            queryable = queryable.Where(x => x.CollegeId == collegeId);
+
+            // 🔍 فلترة بالبحث (اختياري)
+            if (!string.IsNullOrWhiteSpace(search))
+                queryable = queryable.Where(c => c.Name.Contains(search));
+
+            // 🔢 العدد الكلي بعد الفلاتر
             var totalCount = await AsyncExecuter.CountAsync(queryable);
-            var gradelevels = await AsyncExecuter.ToListAsync(queryable.OrderByDescending(c => c.CreationTime).Skip((pageNumber - 1) * pageSize).Take(pageSize));
+
+            // 📄 تطبيق الترتيب و الـ Pagination
+            var gradelevels = await AsyncExecuter.ToListAsync(
+                queryable
+                    .OrderByDescending(c => c.CreationTime)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+            );
+
+            // 🧭 التحويل إلى DTO
             var gradelevelDtos = _mapper.Map<List<GradeLevelDto>>(gradelevels);
+
+            // 📦 إرجاع النتيجة
             return new PagedResultDto<GradeLevelDto>(totalCount, gradelevelDtos);
         }
+
 
         public async Task<ResponseApi<GradeLevelDto>> CreateAsync(CreateUpdateGradeLevelDto input)
         {

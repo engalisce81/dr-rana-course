@@ -9,6 +9,7 @@ namespace Dev.Acadmy.Exams
     public class ExamQuestions
     {
         public Guid Id { get; set; }    
+        public string Tittle { get; set; }
         public bool IsSelected { get; set; }
     }
 }
