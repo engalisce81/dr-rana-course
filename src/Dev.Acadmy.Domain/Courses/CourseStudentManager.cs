@@ -48,6 +48,7 @@ namespace Dev.Acadmy.Courses
             dto.Name = user.Name;
             var medaiItem = await _mediaItemManager.GetAsync(coursestudent.UserId);
             dto.LogoUrl = medaiItem?.Url??"";
+            dto.Email = user.Email;
             return new ResponseApi<CourseStudentDto> { Data = dto, Success = true, Message = "find succeess" };
         }
 
@@ -67,6 +68,7 @@ namespace Dev.Acadmy.Courses
                 dto.Name = user.Name;
                 var medaiItem = await _mediaItemManager.GetAsync(user.Id);
                 dto.LogoUrl = medaiItem?.Url ?? "";
+                dto.Email = user.Email;
             }
             return new PagedResultDto<CourseStudentDto>(totalCount, coursestudentDtos);
         }
