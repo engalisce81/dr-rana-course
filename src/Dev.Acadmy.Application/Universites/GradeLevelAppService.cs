@@ -20,7 +20,7 @@ namespace Dev.Acadmy.Universites
         }
         [Authorize(AcadmyPermissions.GradeLevels.View)]
         public async Task<ResponseApi<GradeLevelDto>> GetAsync(Guid id) => await _gradelevelManager.GetAsync(id);
-        [Authorize(AcadmyPermissions.GradeLevels.View)]
+        [Authorize(AcadmyPermissions.GradeLevels.View)] 
         public async Task<PagedResultDto<GradeLevelDto>> GetListAsync(int pageNumber, int pageSize, string? search, Guid collegeId) => await _gradelevelManager.GetListAsync(pageNumber, pageSize, search, collegeId);
         [Authorize(AcadmyPermissions.GradeLevels.Create)]
         public async Task<ResponseApi<GradeLevelDto>> CreateAsync(CreateUpdateGradeLevelDto input) => await _gradelevelManager.CreateAsync(input);

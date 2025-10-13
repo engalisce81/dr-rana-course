@@ -34,6 +34,8 @@ namespace Dev.Acadmy.Courses
         public async Task<ResponseApi<CourseInfoHomeDto>> GetCoursesInfoAsync(Guid courseId) => await _courseManager.GetCoursesInfoAsync(courseId);
         [Authorize]
         public async Task<PagedResultDto<LookupDto>> GetMyCoursesLookUpAsync() => await _courseManager.GetMyCoursesLookUpAsync();
+        [Authorize]
+        public async Task<Guid> DuplicateCourseAsync(Guid courseId) => await _courseManager.DuplicateCourseAsync(courseId);
 
     }
 }

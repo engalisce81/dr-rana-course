@@ -17,6 +17,9 @@ using Dev.Acadmy.Response;
 using Dev.Acadmy.LookUp;
 using Volo.Abp;
 using Dev.Acadmy.Chapters;
+using Dev.Acadmy.Lectures;
+using Dev.Acadmy.Quizzes;
+using Dev.Acadmy.Exams;
 
 namespace Dev.Acadmy.Courses
 {
@@ -31,8 +34,14 @@ namespace Dev.Acadmy.Courses
         private readonly IRepository<CourseStudent, Guid> _courseStudentRepository;
         private readonly ChapterManager _chapterManager;
         private readonly CourseInfoManager _courseInfoManager;
-        public CourseManager(CourseInfoManager courseInfoManager, ChapterManager chapterManager, IRepository<CourseStudent, Guid> courseStudentRepository, QuestionBankManager questionBankManager, IIdentityUserRepository userRepository, MediaItemManager mediaItemManager, ICurrentUser currentUser, IRepository<Course> courseRepository , IMapper mapper) 
+        private readonly LectureManager _lectureManager;
+        private readonly QuizManager _quizManger;
+        private readonly QuestionManager _questionManager;
+        public CourseManager(QuestionManager questionManager, QuizManager quizManger, LectureManager lectureManager, CourseInfoManager courseInfoManager, ChapterManager chapterManager, IRepository<CourseStudent, Guid> courseStudentRepository, QuestionBankManager questionBankManager, IIdentityUserRepository userRepository, MediaItemManager mediaItemManager, ICurrentUser currentUser, IRepository<Course> courseRepository , IMapper mapper) 
         {
+            _questionManager = questionManager;
+            _quizManger = quizManger;
+            _lectureManager = lectureManager;
             _courseInfoManager = courseInfoManager;
             _chapterManager = chapterManager;
             _courseStudentRepository = courseStudentRepository;
@@ -234,6 +243,106 @@ namespace Dev.Acadmy.Courses
             var courseDtos = _mapper.Map<List<LookupDto>>(myCourses);
 
             return new PagedResultDto<LookupDto>( courseDtos.Count(),courseDtos);
+        }
+
+        public async Task<Guid> DuplicateCourseAsync(Guid courseId)
+        {
+            // 🟢 1. تحميل الكورس الأصلي بكامل العلاقات
+            var course = await (await _courseRepository.GetQueryableAsync())
+                .Include(x => x.Chapters)
+                    .ThenInclude(ch => ch.Lectures)
+                        .ThenInclude(l => l.Quizzes)
+                            .ThenInclude(q => q.Questions)
+                .FirstOrDefaultAsync(x => x.Id == courseId);
+
+            if (course == null)
+                throw new UserFriendlyException("Course not found");
+
+            // 🟢 2. إنشاء نسخة جديدة من الكورس
+            var newCourse = new Course
+            {
+                Name = course.Name + " (Copy)",
+                Title = course.Title,
+                Description = course.Description,
+                Price = course.Price,
+                Rating = 0,
+                UserId = _currentUser.GetId(),
+                CollegeId = course.CollegeId,
+                SubjectId = course.SubjectId,
+                IsActive = true,
+                IsLifetime = course.IsLifetime,
+                DurationInDays = course.DurationInDays
+            };
+            await _courseRepository.InsertAsync(newCourse, autoSave: true);
+            await _mediaItemManager.CreateAsync(new CreateUpdateMediaItemDto { Url = (await _mediaItemManager.GetAsync(course.Id))?.Url ?? "", RefId = newCourse.Id, IsImage = true });
+            await _questionBankManager.CreateAsync(new CreateUpdateQuestionBankDto { CreatorId = newCourse.UserId, CourseId = newCourse.Id, Name = $"{newCourse.Name} Question Bank (Copy)" });
+            // انسخ CourseInfos
+            foreach (var info in course.CourseInfos)
+            {
+                await _courseInfoManager.CreateAsync(new CreateUpdateCourseInfoDto { Name = info.Name, CourseId = newCourse.Id });
+            }
+
+
+            // 🟢 3. نسخ الفصول (Chapters)
+            foreach (var chapter in course.Chapters)
+            {
+                var newChapter = new CreateUpdateChapterDto
+                {
+                    Name = chapter.Name,
+                    CourseId = newCourse.Id
+                };
+                var chapterDto = await _chapterManager.CreateAsync(newChapter);
+
+                // 🟢 4. نسخ المحاضرات (Lectures)
+                foreach (var lecture in chapter.Lectures)
+                {
+                    var newLecture = new CreateUpdateLectureDto
+                    {
+                        Title = lecture.Title,
+                        Content = lecture.Content,
+                        VideoUrl = lecture.VideoUrl,
+                        ChapterId = chapterDto.Data.Id,
+                        IsVisible = lecture.IsVisible,
+                        QuizTryCount = lecture.QuizTryCount
+                    };
+                    var lecDto  = await _lectureManager.CreateAsync(newLecture);
+
+                    // 🟢 5. نسخ الكويزات (Quizzes)
+                    foreach (var quiz in lecture.Quizzes)
+                    {
+                        var newQuiz = new CreateUpdateQuizDto
+                        {
+                            Title = quiz.Title,
+                            Description = quiz.Description,
+                            QuizTime = quiz.QuizTime,
+                            QuizTryCount = quiz.QuizTryCount,
+                            LectureId = lecDto.Data.Id
+                        };
+                        var quizDto = await _quizManger.CreateAsync(newQuiz);
+
+                        // 🟢 6. نسخ الأسئلة (Questions)
+                        foreach (var question in quiz.Questions)
+                        {
+                            var newQuestion = new CreateUpdateQuestionDto
+                            {
+                                Title = question.Title,
+                                QuizId = quizDto.Data.Id,
+                                QuestionTypeId = question.QuestionTypeId,
+                                QuestionBankId = question.QuestionBankId,
+                                Answers = question.QuestionAnswers.Select(a => new CreateUpdateQuestionAnswerDto
+                                {
+                                    Answer = a.Answer,
+                                    IsCorrect = a.IsCorrect,
+                                }).ToList(),
+                                Score=question.Score
+                            };
+                            await _questionManager.CreateAsync(newQuestion);
+                        }
+                    }
+                }
+            }
+
+            return newCourse.Id;
         }
     }
 }

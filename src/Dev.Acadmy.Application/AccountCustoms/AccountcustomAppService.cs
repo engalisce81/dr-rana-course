@@ -21,12 +21,6 @@ namespace Dev.Acadmy.AccountCustoms
         }
         [AllowAnonymous]
         public async Task<ResponseApi<LookupDto>> RegisterAsync(RegistercustomDto input) => await _accountCustomManager.RegisterAsync(input);
-        [Authorize]
-        public async Task<ResponseApi<LookupDto>> UpdateAsync(Guid userId, RegistercustomDto input) => await _accountCustomManager.UpdateAsync(userId, input);
-        [Authorize]
-        public async Task<ResponseApi<List<RegistercustomDto>>> GetStudentListAsync()=> await _accountCustomManager.GetStudentListAsync();
-        [Authorize]
-        public async Task<ResponseApi<RegistercustomDto>> GetAsync(Guid userId)=> await _accountCustomManager.GetAsync(userId);
         [AllowAnonymous]
         public async Task<PagedResultDto<LookupAccountDto>> GetAccountTypes() => await _accountCustomManager.GetAccountTypes();
         [AllowAnonymous]
