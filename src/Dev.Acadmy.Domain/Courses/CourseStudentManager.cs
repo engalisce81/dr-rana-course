@@ -109,6 +109,16 @@ namespace Dev.Acadmy.Courses
             return new ResponseApi<bool> { Data = true, Success = true, Message = "delete succeess" };
         }
 
+        public async Task DeleteAllStudentInCourse(Guid courseId)
+        {
+            var queryable = await _coursestudentRepository.GetQueryableAsync();
+            var courseStudents = await AsyncExecuter.ToListAsync(queryable.Where(x => x.CourseId == courseId));
+            foreach (var courseStudent in courseStudents)
+            {
+                await _coursestudentRepository.DeleteAsync(courseStudent);
+            }
+        }
+
         public async Task<PagedResultDto<StudentDegreeByCourseDto>> GetStudentDegreByCourseAsync(int pageNumber, int pageSize, Guid courseId, Guid userId)
         {
             // 🟢 1. الاستعلام الأساسي

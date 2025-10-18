@@ -29,6 +29,8 @@ namespace Dev.Acadmy.Courses
 
         // Purchase & duration
         public bool IsLifetime { get; set; } = false;
+        public bool IsPdf { get; set; }
+        public string PdfUrl { get; set; }
         public int? DurationInDays { get; set; } // null if lifetime
         public ICollection<string> Infos { get; set; }= new List<string>();
     }

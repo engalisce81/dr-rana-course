@@ -12,6 +12,8 @@ namespace Dev.Acadmy.Courses
         public bool IsActive { get; set; } = true; // enabled/disabled
         public bool IsLifetime { get; set; } = false;
         public int? DurationInDays { get; set; } // null if lifetime
+        public bool IsPdf { get; set; }
+        public string PdfUrl { get; set; }
         public Guid? SubjectId { get; set; }
         public ICollection<string> Infos { get; set; }= new List<string>();
     }

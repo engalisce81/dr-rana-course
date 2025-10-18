@@ -17,6 +17,9 @@ public static class SetPropConsts
     public const string UniversityId = "UniversityId";
     public const string GradeLevelId = "GradeLevelId";
     public const string TermId = "TermId";
+    public const string PhoneNumber = "PhoneNumber";
+
+
 }
 
 public static class RoleConsts

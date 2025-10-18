@@ -46,8 +46,8 @@ namespace Dev.Acadmy.Lectures
             var lecture = await (await _lectureRepository.GetQueryableAsync()).Include(x=>x.Quizzes).Include(x=>x.Chapter).FirstOrDefaultAsync(x => x.Id == id);
             if (lecture == null) return new ResponseApi<LectureDto> { Data = null, Success = false, Message = "Not found lecture" };
             var dto = _mapper.Map<LectureDto>(lecture);
-            var lecPdf = await _mediaItemManager.GetAsync(id);
-            dto.PdfUrl = lecPdf?.Url ?? string.Empty;
+            var lecPdfs = await _mediaItemManager.GetListAsync(id);
+            foreach(var pdf in lecPdfs) if (!pdf.IsImage) dto.PdfUrls.Add(pdf.Url);
             dto.QuizCount = lecture.Quizzes.Count();
             dto.CourseId = lecture.Chapter.CourseId;
             dto.QuizTime = lecture?.Quizzes?.FirstOrDefault()?.QuizTime?? 0;
@@ -63,14 +63,14 @@ namespace Dev.Acadmy.Lectures
             if (!string.IsNullOrWhiteSpace(search))
             {
                 queryable = queryable
-                    .Include(x => x.Chapter)
+                    .Include(x => x.Chapter).ThenInclude(x=>x.Course)
                     .Include(x => x.Quizzes)
-                    .Where(c => c.Content.ToUpper().Contains(search.ToUpper()));
+                    .Where(c => c.Content.ToUpper().Contains(search.ToUpper()) || c.Chapter.Name.ToUpper().Contains(search.ToUpper()) || c.Chapter.Course.Name.ToUpper().Contains(search.ToUpper()));
             }
             else
             {
                 queryable = queryable
-                    .Include(x => x.Chapter)
+                    .Include(x => x.Chapter).ThenInclude(x => x.Course)
                     .Include(x => x.Quizzes);
             }
 
@@ -104,14 +104,15 @@ namespace Dev.Acadmy.Lectures
                     Title = l.Title,
                     VideoUrl = l.VideoUrl,
                     CourseId = l.Chapter.CourseId,
+                    CourseName = l.Chapter.Course.Name,
                     IsVisible = l.IsVisible,
                     QuizCount = l.Quizzes.Count(),
                     QuizTime = l?.Quizzes?.FirstOrDefault()?.QuizTime ?? 0,
                     QuizTryCount = l?.QuizTryCount?? 0
                 };
 
-                dto.PdfUrl = (await _mediaItemManager.GetAsync(dto.Id))?.Url ?? string.Empty;
-
+                var lecPdfs = await _mediaItemManager.GetListAsync(l.Id);
+                foreach (var pdf in lecPdfs) if (!pdf.IsImage) dto.PdfUrls.Add(pdf.Url);
                 lectureDtos.Add(dto);
             }
 
@@ -124,9 +125,8 @@ namespace Dev.Acadmy.Lectures
             var lecture = _mapper.Map<Lecture>(input);
             var result = await _lectureRepository.InsertAsync(lecture);
             await CreateQuizes(input, result.Id);
-            var mediaItem = await _mediaItemManager.CreateAsync(new CreateUpdateMediaItemDto {IsImage=false ,RefId=result.Id,Url=input.PdfUrl });
+            foreach (var pdfUrl in input.PdfUrls) await _mediaItemManager.CreateAsync(new CreateUpdateMediaItemDto { IsImage = false, RefId = result.Id, Url = pdfUrl });
             var dto = _mapper.Map<LectureDto>(result);
-            if(mediaItem != null ) dto.PdfUrl = mediaItem.Url;
             return new ResponseApi<LectureDto> { Data = dto, Success = true, Message = "save succeess" };
         }
 
@@ -136,7 +136,8 @@ namespace Dev.Acadmy.Lectures
             if (lectureDB == null) return new ResponseApi<LectureDto> { Data = null, Success = false, Message = "Not found lecture" };
             var lecture = _mapper.Map(input, lectureDB);
             var result = await _lectureRepository.UpdateAsync(lecture);
-            var mediaItemDB = await _mediaItemManager.UpdateAsync(id ,new CreateUpdateMediaItemDto { IsImage=false , RefId = result.Id ,Url = input.PdfUrl});
+            await _mediaItemManager.DeleteManyAsync(id);
+            foreach (var pdfUrl in input.PdfUrls) await _mediaItemManager.CreateAsync(new CreateUpdateMediaItemDto { IsImage = false, RefId = result.Id, Url = pdfUrl });
             var dto = _mapper.Map<LectureDto>(result);
             return new ResponseApi<LectureDto> { Data = dto, Success = true, Message = "update succeess" };
         }

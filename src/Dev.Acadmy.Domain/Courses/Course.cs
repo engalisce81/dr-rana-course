@@ -27,15 +27,17 @@ namespace Dev.Acadmy.Courses
 
         // Purchase & duration
         public bool IsLifetime { get; set; } = false;
+        public bool IsPdf { get; set; } 
+        public string PdfUrl {  get; set; }
         public int? DurationInDays { get; set; } // null if lifetime
         [ForeignKey(nameof(CollegeId))]
         public College College { get; set; }
         [ForeignKey(nameof(UserId))]
         public IdentityUser User { get; set; }
-        public QuestionBank QuestionBank { get; set; }
         [ForeignKey(nameof(SubjectId))]
         public Subject? Subject { get; set; }
-        public Exam? Exam { get; set; }
+        public ICollection<Exam> Exams { get; set; } = new List<Exam>();
+        public ICollection<QuestionBank> QuestionBanks { get; set; } = new List<QuestionBank>();
         public ICollection<Chapter>  Chapters { get; set; } = new List<Chapter>();
         public ICollection<CourseInfo> CourseInfos { get; set; } = new List<CourseInfo>();
     }

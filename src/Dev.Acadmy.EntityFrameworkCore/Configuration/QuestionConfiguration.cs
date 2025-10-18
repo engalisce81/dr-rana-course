@@ -66,8 +66,8 @@ namespace Dev.Acadmy.Configuration
             builder.ToTable(AcadmyConsts.DbTablePrefix + "QuestionBanks" + AcadmyConsts.DbTablePrefix);
 
             builder.HasOne(qb => qb.Course)
-                   .WithOne(c => c.QuestionBank)
-                   .HasForeignKey<QuestionBank>(qb => qb.CourseId)
+                   .WithMany(c => c.QuestionBanks)
+                   .HasForeignKey(qb => qb.CourseId)
                    .OnDelete(DeleteBehavior.Cascade);
         }
     }

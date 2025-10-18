@@ -161,6 +161,9 @@ namespace Dev.Acadmy.Migrations
                     b.Property<bool>("IsLifetime")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsPdf")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTime?>("LastModificationTime")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("LastModificationTime");
@@ -170,6 +173,10 @@ namespace Dev.Acadmy.Migrations
                         .HasColumnName("LastModifierId");
 
                     b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PdfUrl")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -394,15 +401,65 @@ namespace Dev.Acadmy.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("Score")
+                        .HasColumnType("integer");
+
                     b.Property<int>("TimeExam")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CourseId")
-                        .IsUnique();
+                    b.HasIndex("CourseId");
 
                     b.ToTable("AppExamsProgres", (string)null);
+                });
+
+            modelBuilder.Entity("Dev.Acadmy.Exams.ExamQuestionBank", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<Guid>("ExamId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<Guid>("QuestionBankId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExamId");
+
+                    b.HasIndex("QuestionBankId");
+
+                    b.ToTable("AppExamQuestionBanksProgres", (string)null);
                 });
 
             modelBuilder.Entity("Dev.Acadmy.Lectures.Lecture", b =>
@@ -786,8 +843,7 @@ namespace Dev.Acadmy.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CourseId")
-                        .IsUnique();
+                    b.HasIndex("CourseId");
 
                     b.ToTable("AppQuestionBanksApp", (string)null);
                 });
@@ -952,6 +1008,66 @@ namespace Dev.Acadmy.Migrations
                         .IsUnique();
 
                     b.ToTable("AppQuizStudentApp", (string)null);
+                });
+
+            modelBuilder.Entity("Dev.Acadmy.Quizzes.QuizStudentAnswer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("IsCorrect")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<Guid>("QuestionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("QuizStudentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<double>("ScoreObtained")
+                        .HasColumnType("double precision");
+
+                    b.Property<Guid?>("SelectedAnswerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("TextAnswer")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuestionId");
+
+                    b.HasIndex("QuizStudentId");
+
+                    b.ToTable("AppQuizStudentAnswersApp", (string)null);
                 });
 
             modelBuilder.Entity("Dev.Acadmy.Universites.College", b =>
@@ -3010,12 +3126,31 @@ namespace Dev.Acadmy.Migrations
             modelBuilder.Entity("Dev.Acadmy.Exams.Exam", b =>
                 {
                     b.HasOne("Dev.Acadmy.Courses.Course", "Course")
-                        .WithOne("Exam")
-                        .HasForeignKey("Dev.Acadmy.Exams.Exam", "CourseId")
+                        .WithMany("Exams")
+                        .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Course");
+                });
+
+            modelBuilder.Entity("Dev.Acadmy.Exams.ExamQuestionBank", b =>
+                {
+                    b.HasOne("Dev.Acadmy.Exams.Exam", "Exam")
+                        .WithMany()
+                        .HasForeignKey("ExamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Dev.Acadmy.Questions.QuestionBank", "QuestionBank")
+                        .WithMany()
+                        .HasForeignKey("QuestionBankId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Exam");
+
+                    b.Navigation("QuestionBank");
                 });
 
             modelBuilder.Entity("Dev.Acadmy.Lectures.Lecture", b =>
@@ -3114,8 +3249,8 @@ namespace Dev.Acadmy.Migrations
             modelBuilder.Entity("Dev.Acadmy.Questions.QuestionBank", b =>
                 {
                     b.HasOne("Dev.Acadmy.Courses.Course", "Course")
-                        .WithOne("QuestionBank")
-                        .HasForeignKey("Dev.Acadmy.Questions.QuestionBank", "CourseId")
+                        .WithMany("QuestionBanks")
+                        .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -3149,6 +3284,25 @@ namespace Dev.Acadmy.Migrations
                     b.Navigation("Quiz");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Dev.Acadmy.Quizzes.QuizStudentAnswer", b =>
+                {
+                    b.HasOne("Dev.Acadmy.Questions.Question", "Question")
+                        .WithMany()
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Dev.Acadmy.Quizzes.QuizStudent", "QuizStudent")
+                        .WithMany("Answers")
+                        .HasForeignKey("QuizStudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Question");
+
+                    b.Navigation("QuizStudent");
                 });
 
             modelBuilder.Entity("Dev.Acadmy.Universites.College", b =>
@@ -3343,10 +3497,9 @@ namespace Dev.Acadmy.Migrations
 
                     b.Navigation("CourseInfos");
 
-                    b.Navigation("Exam");
+                    b.Navigation("Exams");
 
-                    b.Navigation("QuestionBank")
-                        .IsRequired();
+                    b.Navigation("QuestionBanks");
                 });
 
             modelBuilder.Entity("Dev.Acadmy.Exams.Exam", b =>
@@ -3377,6 +3530,11 @@ namespace Dev.Acadmy.Migrations
             modelBuilder.Entity("Dev.Acadmy.Quizzes.Quiz", b =>
                 {
                     b.Navigation("Questions");
+                });
+
+            modelBuilder.Entity("Dev.Acadmy.Quizzes.QuizStudent", b =>
+                {
+                    b.Navigation("Answers");
                 });
 
             modelBuilder.Entity("Dev.Acadmy.Universites.College", b =>

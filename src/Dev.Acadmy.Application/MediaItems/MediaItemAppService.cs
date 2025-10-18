@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 
 namespace Dev.Acadmy.MediaItems
@@ -19,6 +20,8 @@ namespace Dev.Acadmy.MediaItems
         }
         [Authorize]
         public async Task<ResponseApi<string>> UploadImageAsync(IFormFile file) => await _mediaItemManager.UploadImageAsync(file);
+        [Authorize]
+        public async Task<PagedResultDto<string>> UploadImagesAsync(ICollection<IFormFile> files) => await  _mediaItemManager.UploadImagesAsync(files);
 
     }
 }

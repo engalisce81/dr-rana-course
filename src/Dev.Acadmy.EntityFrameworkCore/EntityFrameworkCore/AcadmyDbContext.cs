@@ -85,9 +85,8 @@ public class AcadmyDbContext :
     public DbSet<Email> Emails { get; set; }
     public DbSet<LectureTry> LectureTrys { get; set; }
     public DbSet<Exam> Exams { get; set; }
-
-
-
+    public DbSet<ExamQuestionBank> ExamQuestionBanks { get; set; }
+    public DbSet<QuizStudentAnswer> QuizStudentAnswer { get; set; }
 
     public AcadmyDbContext(DbContextOptions<AcadmyDbContext> options)
         : base(options)

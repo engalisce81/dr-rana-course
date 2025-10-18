@@ -36,9 +36,9 @@ namespace Dev.Acadmy.Configuration
                    .HasForeignKey(x => x.UserId)
                    .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasOne(x => x.QuestionBank)
+            builder.HasMany(x => x.QuestionBanks)
                    .WithOne(x=>x.Course)
-                   .HasForeignKey<QuestionBank>(q => q.CourseId)
+                   .HasForeignKey(q => q.CourseId)
                    .OnDelete(DeleteBehavior.Cascade);
         }
     

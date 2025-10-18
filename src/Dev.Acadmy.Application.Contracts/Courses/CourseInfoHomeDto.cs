@@ -9,6 +9,8 @@ namespace Dev.Acadmy.Courses
     public class CourseInfoHomeDto
     {
         public Guid Id { get; set; }
+        public bool IsPdf { get; set; }
+        public string PdfUrl { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
         public decimal Price { get; set; }

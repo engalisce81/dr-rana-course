@@ -24,10 +24,10 @@ namespace Dev.Acadmy.Quizzes
         private readonly ICurrentUser _currentUser;
         private readonly IIdentityUserRepository _userRepository;
         private readonly IRepository<LectureStudent, Guid> _lectureStudentRepository;
-        private readonly IRepository<Lecture, Guid> _lecctureRepository;
-        public QuizManager(IRepository<Lecture, Guid> lecctureRepository, IRepository<LectureStudent, Guid> lectureStudentRepository, IIdentityUserRepository userRepository, ICurrentUser currentUser, IRepository<QuizStudent> quizStudentRepository, IMapper mapper, IRepository<Quiz,Guid> quizRepository)
+        private readonly IRepository<Lecture, Guid> _lectureRepository;
+        public QuizManager(IRepository<Lecture, Guid> lectureRepository, IRepository<LectureStudent, Guid> lectureStudentRepository, IIdentityUserRepository userRepository, ICurrentUser currentUser, IRepository<QuizStudent> quizStudentRepository, IMapper mapper, IRepository<Quiz,Guid> quizRepository)
         {
-            _lecctureRepository = lecctureRepository;
+            _lectureRepository = lectureRepository;
             _lectureStudentRepository = lectureStudentRepository;
             _userRepository = userRepository;
             _currentUser = currentUser;
@@ -96,16 +96,40 @@ namespace Dev.Acadmy.Quizzes
         public async Task<ResponseApi<QuizResultDto>> CorrectQuizAsync(QuizAnswerDto input)
         {
             var userId = _currentUser.GetId();
-            var quiz = await (await _quizRepository.GetQueryableAsync()).Include(q => q.Questions).ThenInclude(q => q.QuestionAnswers).Include(q => q.Questions).ThenInclude(q => q.QuestionType).FirstOrDefaultAsync(q => q.Id == input.QuizId);
-            if (quiz == null)throw new UserFriendlyException("Quiz not found");
+            var quiz = await (await _quizRepository.GetQueryableAsync())
+                .Include(q => q.Questions)
+                    .ThenInclude(q => q.QuestionAnswers)
+                .Include(q => q.Questions)
+                    .ThenInclude(q => q.QuestionType)
+                .Include(x=>x.Lecture)
+                .FirstOrDefaultAsync(q => q.Id == input.QuizId);
+
+            if (quiz == null)
+                throw new UserFriendlyException("Quiz not found");
+
             var alreadyAnswered = await _quizStudentRepository.FirstOrDefaultAsync(x => x.UserId == userId && x.QuizId == input.QuizId);
-            if (alreadyAnswered != null) throw new UserFriendlyException("You have already submitted this quiz. You cannot attempt it again.");
+            if (alreadyAnswered != null)
+                throw new UserFriendlyException("You have already submitted this quiz. You cannot attempt it again.");
+
             double totalScore = 0;
             double studentScore = 0;
+
+            var quizStudent = new QuizStudent
+            {
+                LectureId = quiz.LectureId,
+                UserId = userId,
+                QuizId = quiz.Id
+            };
+
             foreach (var question in quiz.Questions)
             {
                 var studentAnswer = input.Answers.FirstOrDefault(a => a.QuestionId == question.Id);
-                if (studentAnswer == null) continue;
+                if (studentAnswer == null)
+                    continue;
+
+                bool isCorrect = false;
+                double obtained = 0;
+
                 switch ((QuestionTypeEnum)question.QuestionType.Key)
                 {
                     case QuestionTypeEnum.MCQ:
@@ -114,7 +138,11 @@ namespace Dev.Acadmy.Quizzes
                         {
                             var correctAnswer = question.QuestionAnswers.FirstOrDefault(a => a.IsCorrect);
                             if (correctAnswer != null && correctAnswer.Id == studentAnswer.SelectedAnswerId)
+                            {
+                                isCorrect = true;
+                                obtained = question.Score;
                                 studentScore += question.Score;
+                            }
                         }
                         break;
 
@@ -128,7 +156,9 @@ namespace Dev.Acadmy.Quizzes
                             if (matched > 0)
                             {
                                 double ratio = (double)matched / keywords.Count;
-                                studentScore += question.Score * ratio;
+                                obtained = question.Score * ratio;
+                                studentScore += obtained;
+                                isCorrect = ratio >= 0.8; // مثلاً اعتبرها صحيحة لو أكثر من 80% من الكلمات متطابقة
                             }
                         }
                         break;
@@ -140,17 +170,119 @@ namespace Dev.Acadmy.Quizzes
                             if (correctAnswer != null &&
                                 string.Equals(studentAnswer.TextAnswer.Trim(), correctAnswer.Answer.Trim(), StringComparison.OrdinalIgnoreCase))
                             {
-                                studentScore += question.Score; // ياخد الدرجة كاملة لو الكلمة صح
+                                obtained = question.Score;
+                                studentScore += question.Score;
+                                isCorrect = true;
                             }
                         }
                         break;
                 }
+
                 totalScore += question.Score;
+                quizStudent.Answers.Add(new QuizStudentAnswer
+                {
+                    QuestionId = question.Id,
+                    SelectedAnswerId = studentAnswer.SelectedAnswerId,
+                    TextAnswer = studentAnswer.TextAnswer,
+                    IsCorrect = isCorrect,
+                    ScoreObtained = obtained
+                });
             }
-            var quizStudent = new QuizStudent{UserId = userId,QuizId = quiz.Id, Score = (int)studentScore};
-            await _quizStudentRepository.InsertAsync(quizStudent);
-            return new ResponseApi<QuizResultDto>{Data= new QuizResultDto{QuizId = quiz.Id,TotalScore = totalScore,StudentScore = studentScore},Success= true,Message="Correct Success" };
+
+            quizStudent.Score = (int)studentScore;
+            await _quizStudentRepository.InsertAsync(quizStudent, autoSave: true);
+
+            return new ResponseApi<QuizResultDto>
+            {
+                Data = new QuizResultDto
+                {
+                    QuizId = quiz.Id,
+                    TotalScore = totalScore,
+                    StudentScore = studentScore
+                },
+                Success = true,
+                Message = "Quiz corrected successfully"
+            };
         }
+
+        public async Task<ResponseApi<LectureQuizResultDto>> GetLectureQuizResultsAsync(Guid lectureId)
+        {
+            var userId = _currentUser.GetId();
+
+            // نحمل المحاضرة بالكويزات التابعة لها
+            var lecture = await (await _lectureRepository.GetQueryableAsync())
+                .Include(l => l.Quizzes)
+                    .ThenInclude(q => q.Questions)
+                        .ThenInclude(q => q.QuestionAnswers)
+                .FirstOrDefaultAsync(l => l.Id == lectureId);
+
+            if (lecture == null)
+                throw new UserFriendlyException("Lecture not found");
+
+            // نحمل نتائج الطالب في الكويزات دي
+            var quizStudents = await (await _quizStudentRepository.GetQueryableAsync())
+                .Include(qs => qs.Answers)
+                .Where(qs => qs.UserId == userId && qs.LectureId == lectureId)
+                .ToListAsync();
+
+            var lectureResult = new LectureQuizResultDto
+            {
+                LectureId = lecture.Id,
+                LectureTitle = lecture.Title, // أو Title حسب الموديل
+            };
+
+            foreach (var quiz in lecture.Quizzes)
+            {
+                var quizStudent = quizStudents.FirstOrDefault(x => x.QuizId == quiz.Id);
+                if (quizStudent == null) continue; // الطالب لسه ما حلش الكويز ده
+
+                double totalScore = quiz.Questions.Sum(q => q.Score);
+
+                var quizResult = new QuizResultDetailDto
+                {
+                    QuizId = quiz.Id,
+                    QuizTitle = quiz.Title,
+                    StudentScore = quizStudent.Score,
+                    TotalScore = totalScore,
+                };
+
+                foreach (var question in quiz.Questions)
+                {
+                    var studentAnswer = quizStudent.Answers.FirstOrDefault(a => a.QuestionId == question.Id);
+
+                    var correctAnswer = question.QuestionAnswers.FirstOrDefault(a => a.IsCorrect);
+                    string correctAnswerText = correctAnswer?.Answer;
+
+                    string studentAnswerText = studentAnswer?.TextAnswer;
+                    if (studentAnswer?.SelectedAnswerId != null)
+                    {
+                        var selected = question.QuestionAnswers.FirstOrDefault(a => a.Id == studentAnswer.SelectedAnswerId);
+                        studentAnswerText = selected?.Answer;
+                    }
+
+                    quizResult.Questions.Add(new QuestionResultDto
+                    {
+                        QuestionId = question.Id,
+                        QuestionText = question.Title, // أو Text حسب الموديل
+                        StudentAnswer = studentAnswerText,
+                        CorrectAnswer = correctAnswerText,
+                        IsCorrect = studentAnswer?.IsCorrect ?? false,
+                        ScoreObtained = studentAnswer?.ScoreObtained ?? 0,
+                        ScoreTotal = question.Score
+                    });
+                }
+
+                lectureResult.Quizzes.Add(quizResult);
+            }
+
+            return new ResponseApi<LectureQuizResultDto>
+            {
+                Data = lectureResult,
+                Success = true,
+                Message = "Lecture quiz results retrieved successfully"
+            };
+        }
+
 
         public async Task<ResponseApi<QuizStudentDto>> MarkQuizAsync(Guid quizId, int score)
         {
@@ -178,7 +310,7 @@ namespace Dev.Acadmy.Quizzes
                     Data = null
                 };
             }
-            var lecture = await _lecctureRepository.FirstOrDefaultAsync(x => x.Id == lectureId);
+            var lecture = await _lectureRepository.FirstOrDefaultAsync(x => x.Id == lectureId);
             // هات LectureStudent
             var lectureStudent = await _lectureStudentRepository.FirstOrDefaultAsync(x =>
                 x.LectureId == lectureId && x.UserId == userId);

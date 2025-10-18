@@ -17,10 +17,10 @@ namespace Dev.Acadmy.Courses
         {
             _examManager = examManager;
         }
-        [Authorize]
-        public async Task<ExamDto> GetAsync(Guid questionBankId, Guid examId) => await _examManager.GetAsync(questionBankId, examId);
-        [Authorize]
-        public async Task UpdateExam(Guid id, CreateUpdateExamDto input) => await _examManager.UpdateExam(id, input);
+        //[Authorize]
+        //public async Task<ExamDto> GetAsync(Guid questionBankId, Guid examId) => await _examManager.GetAsync(questionBankId, examId);
+        //[Authorize]
+        //public async Task UpdateExam(Guid id, CreateUpdateExamDto input) => await _examManager.UpdateExam(id, input);
 
     }
 }

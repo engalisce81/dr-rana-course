@@ -29,8 +29,10 @@ namespace Dev.Acadmy.Chapters
         private readonly MediaItemManager _mediaItemManager;
         private readonly IRepository<LectureStudent ,Guid> _lectureStudentRepository;
         private readonly IRepository<LectureTry, Guid> _lectureTryRepository;
-        public ChapterManager(IRepository<LectureTry, Guid> lectureTryRepository, LectureManager lectureManger, IRepository<LectureStudent, Guid> lectureStudentRepository, MediaItemManager mediaItemManager, IRepository<QuizStudent, Guid> quizStudentRepository, ICurrentUser currentUser, IIdentityUserRepository userRepository, IMapper mapper, IRepository<Chapter> chapterRepository)
+        private readonly IRepository<Courses.Course , Guid> _courseRepository;  
+        public ChapterManager(IRepository<Courses.Course, Guid> courseRepository, IRepository<LectureTry, Guid> lectureTryRepository, LectureManager lectureManger, IRepository<LectureStudent, Guid> lectureStudentRepository, MediaItemManager mediaItemManager, IRepository<QuizStudent, Guid> quizStudentRepository, ICurrentUser currentUser, IIdentityUserRepository userRepository, IMapper mapper, IRepository<Chapter> chapterRepository)
         {
+            _courseRepository = courseRepository;
             _lectureTryRepository = lectureTryRepository;
             _lectureManger = lectureManger;
             _lectureStudentRepository = lectureStudentRepository;
@@ -54,7 +56,7 @@ namespace Dev.Acadmy.Chapters
         {
             var roles = await _userRepository.GetRolesAsync(_currentUser.GetId());
             var queryable = (await _chapterRepository.GetQueryableAsync());
-            if (!string.IsNullOrWhiteSpace(search)) queryable = queryable.Include(x=>x.Course).Where(c => c.Name.Contains(search));
+            if (!string.IsNullOrWhiteSpace(search)) queryable = queryable.Include(x=>x.Course).Where(c => c.Name.Contains(search) || c.Course.Name.Contains(search));
             var totalCount = await AsyncExecuter.CountAsync(queryable);
             var chapters = new List<Chapter>();  
             if (roles.Any(x=>x.Name.ToUpper()==RoleConsts.Admin.ToUpper())) chapters = await AsyncExecuter.ToListAsync(queryable.Include(x => x.Course).OrderByDescending(c => c.CreationTime).Skip((pageNumber - 1) * pageSize).Take(pageSize));

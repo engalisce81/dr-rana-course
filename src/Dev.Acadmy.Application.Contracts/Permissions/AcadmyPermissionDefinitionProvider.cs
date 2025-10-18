@@ -31,6 +31,13 @@ public class AcadmyPermissionDefinitionProvider : PermissionDefinitionProvider
         students.AddChild(AcadmyPermissions.Students.View, L("Permission:Students.View"));
         students.AddChild(AcadmyPermissions.Students.Delete, L("Permission:Students.Delete"));
 
+
+        var teachers = group.AddPermission(AcadmyPermissions.Teachers.Default, L("Permission:Teachers"));
+        teachers.AddChild(AcadmyPermissions.Teachers.Create, L("Permission:Teachers.Create"));
+        teachers.AddChild(AcadmyPermissions.Teachers.Edit, L("Permission:Teachers.Edit"));
+        teachers.AddChild(AcadmyPermissions.Teachers.View, L("Permission:Teachers.View"));
+        teachers.AddChild(AcadmyPermissions.Teachers.Delete, L("Permission:Teachers.Delete"));
+
         // Courses
         var courses = group.AddPermission(AcadmyPermissions.Courses.Default, L("Permission:Courses"));
         courses.AddChild(AcadmyPermissions.Courses.Create, L("Permission:Courses.Create"));
@@ -129,6 +136,7 @@ public class AcadmyPermissionDefinitionProvider : PermissionDefinitionProvider
         universities.AddChild(AcadmyPermissions.Universites.Edit, L("Permission:Universites.Edit"));
         universities.AddChild(AcadmyPermissions.Universites.Delete, L("Permission:Universites.Delete"));
         universities.AddChild(AcadmyPermissions.Universites.View, L("Permission:Universites.View"));
+
 
     }
 

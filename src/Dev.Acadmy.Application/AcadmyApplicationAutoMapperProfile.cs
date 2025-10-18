@@ -39,7 +39,7 @@ public class AcadmyApplicationAutoMapperProfile : Profile
         CreateMap<CreateUpdateMediaItemDto, MediaItem>();
 
         // Question
-        CreateMap<Question, QuestionDto>();
+        CreateMap<Question, Dev.Acadmy.Questions.QuestionDto>();
 
         // QuestionDto -> Question (لو عايز تـ update direct)
         CreateMap<CreateUpdateQuestionDto, Question>();

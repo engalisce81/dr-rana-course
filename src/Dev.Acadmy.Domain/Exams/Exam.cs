@@ -13,6 +13,7 @@ namespace Dev.Acadmy.Exams
     {
         public string Name {  get; set; }
         public int TimeExam { get; set; }
+        public int Score { get; set; }
         public bool IsActive {  get; set; }
         public Guid CourseId { get; set; }
         [ForeignKey(nameof(CourseId))]

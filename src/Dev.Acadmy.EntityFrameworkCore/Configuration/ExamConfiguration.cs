@@ -17,7 +17,7 @@ namespace Dev.Acadmy.Configuration
         {
             builder.ToTable(AcadmyConsts.DbTablePrefix + "Exams" + AcadmyConsts.DbSchema);
             builder.ConfigureByConvention();
-            builder .HasOne(x=>x.Course).WithOne(x=>x.Exam).HasForeignKey<Exam>(x=>x.CourseId);
+            builder .HasOne(x=>x.Course).WithMany(x=>x.Exams).HasForeignKey(x=>x.CourseId);
             builder.HasMany(x => x.Questions).WithOne(x => x.Exam).HasForeignKey(x => x.ExamId);
         }
     }

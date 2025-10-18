@@ -1,10 +1,13 @@
 ﻿using AutoMapper;
 using Dev.Acadmy.Response;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
+using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 
@@ -25,12 +28,19 @@ namespace Dev.Acadmy.MediaItems
 
         public async Task<MediaItem?> GetAsync(Guid refId ) => await _mediaItemRepository.FirstOrDefaultAsync(x => x.RefId == refId);
 
+        public async Task<List<MediaItem>> GetListAsync(Guid refId) =>await (await _mediaItemRepository.GetQueryableAsync()).Where(x => x.RefId == refId).ToListAsync();
 
         public async Task<MediaItem> CreateAsync(CreateUpdateMediaItemDto input)
         {
             var mediaItem = _mapper.Map<MediaItem>(input);
             var result = await _mediaItemRepository.InsertAsync(mediaItem);
             return result;
+        }
+
+        public async Task CreateManyAsync(List<CreateUpdateMediaItemDto> inputs)
+        {
+            var mediaItems = _mapper.Map<List<MediaItem>>(inputs);
+            foreach (var mediaItem in mediaItems) await _mediaItemRepository.InsertAsync(mediaItem ,autoSave:true);
         }
 
         public async Task<MediaItem> UpdateAsync(Guid id, CreateUpdateMediaItemDto input)
@@ -91,6 +101,48 @@ namespace Dev.Acadmy.MediaItems
                 Console.WriteLine($"DeleteImageByUrl Error: {ex.Message}");
             }
         }
+
+        public async Task UpdateManyAsync(Guid id,List<CreateUpdateMediaItemDto> inputs)
+        {
+            var mediaItemsDB = await (await _mediaItemRepository.GetQueryableAsync()).Where(x => x.RefId == id).ToListAsync();
+            var results = new List<MediaItem>();
+            if (mediaItemsDB == null && mediaItemsDB.Count==0)
+            {
+                foreach (var input in inputs)
+                {
+                    var created = await CreateAsync(input);
+                    results.Add(created);
+                }
+            }
+            else
+            {
+                await DeleteManyAsync(id);
+                var mediaItems = _mapper.Map(inputs, mediaItemsDB);
+                await _mediaItemRepository.UpdateManyAsync(mediaItems);
+            } 
+        }
+
+        public async Task DeleteManyAsync(Guid id)
+        {
+            var mediaItems = await (await _mediaItemRepository.GetQueryableAsync()).Where(x => x.RefId == id).ToListAsync();
+            foreach(var mediaItem in mediaItems)
+            {
+                DeleteImageByUrlAsync(mediaItem.Url);
+                await _mediaItemRepository.DeleteAsync(mediaItem,autoSave:true);
+            }
+        }
+
+        public async Task<PagedResultDto<string>> UploadImagesAsync(ICollection<IFormFile> files)
+        {
+            var urls = new List<string>();
+            foreach (var file in files) 
+            {
+                var image =await UploadImageAsync(file);
+                urls.Add(image.Data);
+            }
+            return new PagedResultDto<string>(urls.Count, urls);
+        }
+
 
         public async Task<ResponseApi<string>> UploadImageAsync(IFormFile file)
         {
