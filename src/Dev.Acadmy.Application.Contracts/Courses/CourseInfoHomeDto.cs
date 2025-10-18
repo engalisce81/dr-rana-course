@@ -25,8 +25,9 @@ namespace Dev.Acadmy.Courses
         public Guid? GradelevelId { get; set; }
         public string? GradelevelName { get; set; }
         public bool AlreadyJoin { get; set; }
-        public bool AlreadyRequest { get; set; }
+        public bool AlreadyRequest { get; set;}
         public int ChapterCount { get; set; }
+        public int LectureCount { get; set; }
         public int? DurationInWeeks { get; set; } // null if lifetime
         public ICollection<string> Infos { get;set;} = new List<string>();
 
