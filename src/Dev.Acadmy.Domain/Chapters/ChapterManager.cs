@@ -212,8 +212,7 @@ namespace Dev.Acadmy.Chapters
                     foreach (var dto in lectureDtos) 
                     { 
                         var lecPdfs = await _mediaItemManager.GetListAsync(l.Id);
-                        foreach (var pdf in lecPdfs) if (!pdf.IsImage) dto.PdfUrls.Add(pdf.Url);
-                        lectureDtos.Add(dto);
+                        foreach (var pdf in lecPdfs) if (!pdf.IsImage)  dto.PdfUrls.Add(pdf.Url);
                     }
                 }
                 var creatorCourse = await _userRepository.GetAsync(c.Course.UserId);

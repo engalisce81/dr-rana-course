@@ -12,5 +12,7 @@ namespace Dev.Acadmy.Chapters
         public string Name { get; set; }
         public Guid CourseId { get; set; }
         public string CourseName { get; set; }
+        public bool IsFree { get; set; }
+
     }
 }

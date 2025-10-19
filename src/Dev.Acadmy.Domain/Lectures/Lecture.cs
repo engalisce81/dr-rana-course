@@ -16,6 +16,7 @@ namespace Dev.Acadmy.Lectures
         public string Content { get; set; }
         public string VideoUrl { get; set; }
         public Guid ChapterId { get; set; }
+        public bool IsFree { get; set; }
         public bool IsVisible { get; set; }
         public int QuizTryCount { get; set; }
 
