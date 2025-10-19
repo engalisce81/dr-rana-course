@@ -40,6 +40,19 @@ namespace Dev.Acadmy.AccountCustoms
             _userRepository = userRepository;
         }
 
+        public async Task ResetPasswordAsync(Guid userId, string newPassword)
+        {
+            var user = await _userManager.GetByIdAsync(userId);
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var result = await _userManager.ResetPasswordAsync(user, token, newPassword);
+
+            if (!result.Succeeded)
+            {
+                throw new UserFriendlyException(
+                    string.Join(", ", result.Errors.Select(e => e.Description))
+                );
+            }
+        }
         public async Task<PagedResultDto<LookupAccountDto>> GetAccountTypes()
         {
             var dtos = (await _accountTypeRepository.GetQueryableAsync()).Where(x=>x.Key !=(int) AccountTypeKey.Admin).Select(x=> new LookupAccountDto { Id = x.Id ,Key =x.Key,Name = x.Name}).ToList();

@@ -247,12 +247,11 @@ namespace Dev.Acadmy.Courses
                 DurationInWeeks = course.DurationInDays / 7,
                 GradelevelId = course.Subject?.GradeLevelId ?? null,
                 GradelevelName = course.Subject?.GradeLevel?.Name ?? string.Empty,
+                IntroductionVideoUrl = course.IntroductionVideoUrl,
             }).ToList();
 
             return new PagedResultDto<CourseInfoHomeDto>(totalCount, courseDtos);
         }
-
-
 
         public async Task<ResponseApi<CourseInfoHomeDto>> GetCoursesInfoAsync( Guid courseId)
         {
@@ -281,6 +280,7 @@ namespace Dev.Acadmy.Courses
                 SubjectName = course.Subject?.Name ?? "",
                 ChapterCount = course.Chapters.Count,
                 DurationInWeeks = course.DurationInDays / 7,
+                IntroductionVideoUrl = course.IntroductionVideoUrl,
                 Infos = course.CourseInfos.Select(x=>x.Name).ToList()
             };
             return new ResponseApi<CourseInfoHomeDto>() { Data= courseDto ,Success=true , Message="Find Course Success"};
@@ -296,13 +296,9 @@ namespace Dev.Acadmy.Courses
             var myCourses = await queryable
                 .Where(c => c.UserId == currentUserId)
                 .ToListAsync();
-
-            if (!myCourses.Any())
-                return new PagedResultDto<LookupDto>(0,new List<LookupDto>() );
-
+            if (!myCourses.Any()) return new PagedResultDto<LookupDto>(0,new List<LookupDto>() );
             // اعمل Map للـ DTO
             var courseDtos = _mapper.Map<List<LookupDto>>(myCourses);
-
             return new PagedResultDto<LookupDto>( courseDtos.Count(),courseDtos);
         }
 
@@ -332,11 +328,14 @@ namespace Dev.Acadmy.Courses
                 SubjectId = course.SubjectId,
                 IsActive = true,
                 IsLifetime = course.IsLifetime,
-                DurationInDays = course.DurationInDays
+                DurationInDays = course.DurationInDays,
+                IsPdf = course.IsPdf,
+                PdfUrl= course.PdfUrl,
+                IntroductionVideoUrl= course.IntroductionVideoUrl,
             };
             await _courseRepository.InsertAsync(newCourse, autoSave: true);
             await _mediaItemManager.CreateAsync(new CreateUpdateMediaItemDto { Url = (await _mediaItemManager.GetAsync(course.Id))?.Url ?? "", RefId = newCourse.Id, IsImage = true });
-            await _questionBankManager.CreateAsync(new CreateUpdateQuestionBankDto { CreatorId = newCourse.UserId, CourseId = newCourse.Id, Name = $"{newCourse.Name} Question Bank (Copy)" });
+           // await _questionBankManager.CreateAsync(new CreateUpdateQuestionBankDto { CreatorId = newCourse.UserId, CourseId = newCourse.Id, Name = $"{newCourse.Name} Question Bank (Copy)" });
             // انسخ CourseInfos
             foreach (var info in course.CourseInfos)
             {

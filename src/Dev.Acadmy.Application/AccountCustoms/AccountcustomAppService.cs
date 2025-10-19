@@ -27,5 +27,7 @@ namespace Dev.Acadmy.AccountCustoms
         public async Task<ResponseApi<EmailDto>> SendNotificationToEmailAsync(CreateEmailDto input) => await _emailManager.SendNotificationToEmailAsync(input);
         [AllowAnonymous]
         public async Task<ResponseApi<EmailDto>> CheckCodeAsync(UpdateEmailDto input) => await _emailManager.CheckCodeAsync(input);
+        [Authorize]
+        public async Task ResetPasswordAsync(Guid userId, string newPassword) => await _accountCustomManager.ResetPasswordAsync(userId, newPassword);
     }
 }

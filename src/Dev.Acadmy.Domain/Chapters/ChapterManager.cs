@@ -109,8 +109,6 @@ namespace Dev.Acadmy.Chapters
             if (pageSize <= 0) pageSize = 10;
 
             var userId = _currentUser.GetId();
-            var currentUser = await _userRepository.GetAsync(userId);
-
             // ✅ الكويزات التي أجابها المستخدم مسبقاً
             var answeredLectureIds = await (await _quizStudentRepository.GetQueryableAsync())
                 .Where(qs => qs.UserId == userId)
@@ -209,10 +207,17 @@ namespace Dev.Acadmy.Chapters
                         Title = l.Title,
                         Content = l.Content,
                         VideoUrl = l.VideoUrl,
-                        PdfUrl = media?.Url ?? "",
                         Quiz = quizDto
                     });
+                    foreach (var dto in lectureDtos) 
+                    { 
+                        var lecPdfs = await _mediaItemManager.GetListAsync(l.Id);
+                        foreach (var pdf in lecPdfs) if (!pdf.IsImage) dto.PdfUrls.Add(pdf.Url);
+                        lectureDtos.Add(dto);
+                    }
                 }
+                var creatorCourse = await _userRepository.GetAsync(c.Course.UserId);
+                var mediaItemUser = await _mediaItemManager.GetAsync(creatorCourse.Id);
 
                 chapterInfoDtos.Add(new CourseChaptersDto
                 {
@@ -220,10 +225,14 @@ namespace Dev.Acadmy.Chapters
                     CourseName = c.Course.Name,
                     ChapterId = c.Id,
                     ChapterName = c.Name,
+                    UserId = creatorCourse.Id,
+                    UserName = creatorCourse.Name,
+                    LogoUrl = mediaItemUser?.Url??  string.Empty, 
                     LectureCount = lectureDtos.Count,
                     Lectures = lectureDtos
                 });
             }
+
 
             return new PagedResultDto<CourseChaptersDto>(totalCount, chapterInfoDtos);
         }
