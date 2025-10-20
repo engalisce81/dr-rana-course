@@ -6,6 +6,7 @@ using Dev.Acadmy.LookUp;
 using Dev.Acadmy.MediaItems;
 using Dev.Acadmy.Questions;
 using Dev.Acadmy.Quizzes;
+using Dev.Acadmy.Supports;
 using Dev.Acadmy.Universites;
 using System.Linq;
 
@@ -74,7 +75,10 @@ public class AcadmyApplicationAutoMapperProfile : Profile
         CreateMap<CreateUpdateUniversityDto ,  University>();
 
         CreateMap<GradeLevel,GradeLevelDto>();  
-        CreateMap<CreateUpdateGradeLevelDto, GradeLevel>();                                 
+        CreateMap<CreateUpdateGradeLevelDto, GradeLevel>();
+
+        CreateMap<Support, SupportDto>();
+        CreateMap<CreateUpdateSupportDto , Support>();
 
         CreateMap<LookupDto, QuestionBank>().ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name)); ;
         CreateMap<LookupDto, QuestionType>().ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name));

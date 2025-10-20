@@ -24,6 +24,12 @@ public class AcadmyPermissionDefinitionProvider : PermissionDefinitionProvider
         gradelevels.AddChild(AcadmyPermissions.GradeLevels.Delete, L("Permission:GradeLevels.Delete"));
 
 
+        var supporsts = group.AddPermission(AcadmyPermissions.Supports.Default, L("Permission:Supports"));
+        supporsts.AddChild(AcadmyPermissions.Supports.Create, L("Permission:Supports.Create"));
+        supporsts.AddChild(AcadmyPermissions.Supports.Edit, L("Permission:Supports.Edit"));
+        supporsts.AddChild(AcadmyPermissions.Supports.View, L("Permission:Supports.View"));
+        supporsts.AddChild(AcadmyPermissions.Supports.Delete, L("Permission:Supports.Delete"));
+
 
         var students = group.AddPermission(AcadmyPermissions.Students.Default, L("Permission:Students"));
         students.AddChild(AcadmyPermissions.Students.Create, L("Permission:Students.Create"));

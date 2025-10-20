@@ -22,6 +22,7 @@ using Dev.Acadmy.Courses;
 using Dev.Acadmy.Universites;
 using Dev.Acadmy.Emails;
 using Dev.Acadmy.Exams;
+using Dev.Acadmy.Supports;
 
 namespace Dev.Acadmy.EntityFrameworkCore;
 
@@ -87,6 +88,7 @@ public class AcadmyDbContext :
     public DbSet<Exam> Exams { get; set; }
     public DbSet<ExamQuestionBank> ExamQuestionBanks { get; set; }
     public DbSet<QuizStudentAnswer> QuizStudentAnswer { get; set; }
+    public DbSet<Support> Supports { get; set; }    
 
     public AcadmyDbContext(DbContextOptions<AcadmyDbContext> options)
         : base(options)

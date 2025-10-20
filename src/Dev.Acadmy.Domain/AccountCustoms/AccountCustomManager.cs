@@ -45,7 +45,6 @@ namespace Dev.Acadmy.AccountCustoms
             var user = await _userManager.GetByIdAsync(userId);
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
             var result = await _userManager.ResetPasswordAsync(user, token, newPassword);
-
             if (!result.Succeeded)
             {
                 throw new UserFriendlyException(

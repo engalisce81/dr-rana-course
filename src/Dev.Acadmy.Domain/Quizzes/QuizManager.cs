@@ -25,8 +25,10 @@ namespace Dev.Acadmy.Quizzes
         private readonly IIdentityUserRepository _userRepository;
         private readonly IRepository<LectureStudent, Guid> _lectureStudentRepository;
         private readonly IRepository<Lecture, Guid> _lectureRepository;
-        public QuizManager(IRepository<Lecture, Guid> lectureRepository, IRepository<LectureStudent, Guid> lectureStudentRepository, IIdentityUserRepository userRepository, ICurrentUser currentUser, IRepository<QuizStudent> quizStudentRepository, IMapper mapper, IRepository<Quiz,Guid> quizRepository)
+        private readonly IRepository<QuizStudentAnswer, Guid> _quizStudentAnswerRepository;
+        public QuizManager(IRepository<QuizStudentAnswer, Guid> quizStudentAnswerRepository, IRepository<Lecture, Guid> lectureRepository, IRepository<LectureStudent, Guid> lectureStudentRepository, IIdentityUserRepository userRepository, ICurrentUser currentUser, IRepository<QuizStudent> quizStudentRepository, IMapper mapper, IRepository<Quiz,Guid> quizRepository)
         {
+            _quizStudentAnswerRepository = quizStudentAnswerRepository;
             _lectureRepository = lectureRepository;
             _lectureStudentRepository = lectureStudentRepository;
             _userRepository = userRepository;
@@ -93,34 +95,45 @@ namespace Dev.Acadmy.Quizzes
             return new ResponseApi<bool> { Data = true, Success = true, Message = "delete succeess" };
         }
 
-        public async Task<ResponseApi<QuizResultDto>> CorrectQuizAsync(QuizAnswerDto input)
+        public async Task<ResponseApi<QuizResultDto>> SubmitQuizAsync(QuizAnswerDto input)
         {
             var userId = _currentUser.GetId();
+
             var quiz = await (await _quizRepository.GetQueryableAsync())
                 .Include(q => q.Questions)
                     .ThenInclude(q => q.QuestionAnswers)
                 .Include(q => q.Questions)
                     .ThenInclude(q => q.QuestionType)
-                .Include(x=>x.Lecture)
+                .Include(x => x.Lecture)
                 .FirstOrDefaultAsync(q => q.Id == input.QuizId);
 
             if (quiz == null)
                 throw new UserFriendlyException("Quiz not found");
 
-            var alreadyAnswered = await _quizStudentRepository.FirstOrDefaultAsync(x => x.UserId == userId && x.QuizId == input.QuizId);
+            // ✅ تحقق إذا كان المستخدم حل الكويز مسبقًا
+            var alreadyAnswered = await _quizStudentRepository.FirstOrDefaultAsync(
+                x => x.UserId == userId && x.QuizId == input.QuizId
+            );
+
             if (alreadyAnswered != null)
                 throw new UserFriendlyException("You have already submitted this quiz. You cannot attempt it again.");
 
             double totalScore = 0;
             double studentScore = 0;
 
+            // ✅ إنشاء سجل الطالب في الكويز
             var quizStudent = new QuizStudent
             {
                 LectureId = quiz.LectureId,
                 UserId = userId,
-                QuizId = quiz.Id
+                QuizId = quiz.Id,
+                Score = 0
             };
 
+            // ✅ احفظ الكائن أولاً حتى يتولد له Id
+            await _quizStudentRepository.InsertAsync(quizStudent, autoSave: true);
+
+            // ✅ لف على الأسئلة
             foreach (var question in quiz.Questions)
             {
                 var studentAnswer = input.Answers.FirstOrDefault(a => a.QuestionId == question.Id);
@@ -158,7 +171,7 @@ namespace Dev.Acadmy.Quizzes
                                 double ratio = (double)matched / keywords.Count;
                                 obtained = question.Score * ratio;
                                 studentScore += obtained;
-                                isCorrect = ratio >= 0.8; // مثلاً اعتبرها صحيحة لو أكثر من 80% من الكلمات متطابقة
+                                isCorrect = ratio >= 0.8; // ✅ اعتبرها صحيحة لو التشابه ≥ 80%
                             }
                         }
                         break;
@@ -179,19 +192,26 @@ namespace Dev.Acadmy.Quizzes
                 }
 
                 totalScore += question.Score;
-                quizStudent.Answers.Add(new QuizStudentAnswer
+
+                // ✅ إنشاء الإجابة الخاصة بالطالب
+                var answerEntity = new QuizStudentAnswer
                 {
+                    QuizStudentId = quizStudent.Id,
                     QuestionId = question.Id,
                     SelectedAnswerId = studentAnswer.SelectedAnswerId,
                     TextAnswer = studentAnswer.TextAnswer,
                     IsCorrect = isCorrect,
                     ScoreObtained = obtained
-                });
+                };
+
+                await _quizStudentAnswerRepository.InsertAsync(answerEntity, autoSave: true);
             }
 
-            quizStudent.Score = (int)studentScore;
-            await _quizStudentRepository.InsertAsync(quizStudent, autoSave: true);
+            // ✅ تحديث الدرجة النهائية للطالب بعد إدخال الإجابات
+            quizStudent.Score = (int)Math.Round(studentScore);
+            await _quizStudentRepository.UpdateAsync(quizStudent, autoSave: true);
 
+            // ✅ إرجاع النتيجة للمستخدم
             return new ResponseApi<QuizResultDto>
             {
                 Data = new QuizResultDto
@@ -201,9 +221,10 @@ namespace Dev.Acadmy.Quizzes
                     StudentScore = studentScore
                 },
                 Success = true,
-                Message = "Quiz corrected successfully"
+                Message = "Quiz submitted and corrected successfully"
             };
         }
+
 
         public async Task<ResponseApi<LectureQuizResultDto>> GetLectureQuizResultsAsync(Guid lectureId)
         {

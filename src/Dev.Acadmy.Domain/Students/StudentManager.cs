@@ -55,6 +55,7 @@ namespace Dev.Acadmy.Students
             user.SetProperty(SetPropConsts.CollegeId, input.CollegeId);
             user.SetProperty(SetPropConsts.Gender, input.Gender);
             user.SetProperty(SetPropConsts.UniversityId, input.UniversityId);
+            user.SetProperty(SetPropConsts.PhoneNumber, input.PhoneNumber);
             if (accountType.Key == (int)AccountTypeKey.Student)
             {
                 user.SetProperty(SetPropConsts.GradeLevelId, input.GradeLevelId);
@@ -126,6 +127,7 @@ namespace Dev.Acadmy.Students
             user.SetProperty(SetPropConsts.CollegeId, input.CollegeId);
             user.SetProperty(SetPropConsts.Gender, input.Gender);
             user.SetProperty(SetPropConsts.UniversityId, input.UniversityId);
+            user.SetProperty(SetPropConsts.PhoneNumber, input.PhoneNumber);
             // 🟢 6. تحديث خصائص إضافية حسب نوع الحساب
             if (accountType.Key == (int)AccountTypeKey.Student)
             {
@@ -186,7 +188,8 @@ namespace Dev.Acadmy.Students
                 UniversityId = user.GetProperty<Guid>(SetPropConsts.UniversityId),
                 Gender = user.GetProperty<bool>(SetPropConsts.Gender),
                 GradeLevelId = user.GetProperty<Guid>(SetPropConsts.GradeLevelId),
-                StudentMobileIP = user.GetProperty<string>(SetPropConsts.StudentMobileIP)
+                StudentMobileIP = user.GetProperty<string>(SetPropConsts.StudentMobileIP),
+                PhoneNumber = user.GetProperty<string>(SetPropConsts.PhoneNumber)
             };
 
             // 🟢 4. إرجاع النتيجة
