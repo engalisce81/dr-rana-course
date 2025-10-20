@@ -37,8 +37,14 @@ namespace Dev.Acadmy.Courses
         private readonly LectureManager _lectureManager;
         private readonly QuizManager _quizManger;
         private readonly QuestionManager _questionManager;
-        public CourseManager(QuestionManager questionManager, QuizManager quizManger, LectureManager lectureManager, CourseInfoManager courseInfoManager, ChapterManager chapterManager, IRepository<CourseStudent, Guid> courseStudentRepository, QuestionBankManager questionBankManager, IIdentityUserRepository userRepository, MediaItemManager mediaItemManager, ICurrentUser currentUser, IRepository<Course> courseRepository , IMapper mapper) 
+        private readonly IRepository<QuizStudent, Guid> _quizStudentRepository;
+        private readonly IRepository<Chapter, Guid> _chapterRepository;
+        private readonly IRepository<LectureTry, Guid> _lectureTryRepository;
+        public CourseManager(IRepository<LectureTry, Guid> lectureTryRepository, IRepository<Chapter, Guid> chapterRepository,IRepository<QuizStudent, Guid> quizStudentRepository, QuestionManager questionManager, QuizManager quizManger, LectureManager lectureManager, CourseInfoManager courseInfoManager, ChapterManager chapterManager, IRepository<CourseStudent, Guid> courseStudentRepository, QuestionBankManager questionBankManager, IIdentityUserRepository userRepository, MediaItemManager mediaItemManager, ICurrentUser currentUser, IRepository<Course> courseRepository , IMapper mapper) 
         {
+            _lectureTryRepository = lectureTryRepository;
+            _chapterRepository = chapterRepository;
+            _quizStudentRepository = quizStudentRepository;
             _questionManager = questionManager;
             _quizManger = quizManger;
             _lectureManager = lectureManager;
@@ -262,18 +268,26 @@ namespace Dev.Acadmy.Courses
             var queryable = await _courseRepository.GetQueryableAsync();
             var course = await queryable.Include(c => c.User).Include(x => x.Subject).Include(x=>x.CourseInfos).Include(c => c.College).Include(c => c.Chapters).OrderByDescending(c => c.CreationTime).FirstOrDefaultAsync(x=>x.Id==courseId);
             if (course == null) { throw new UserFriendlyException("Course Not Found"); }
-            var media = await _mediaItemManager.GetAsync(courseId); 
-            var courseDto =  new CourseInfoHomeDto
+            var media = await _mediaItemManager.GetAsync(courseId);
+            var mediaUser = await _mediaItemManager.GetAsync(course.UserId);
+
+            var chapters = await GetCourseChaptersListAsync(courseId, true);
+            var courseDto = new CourseInfoHomeDto
             {
                 Id = course.Id,
                 Name = course.Name,
                 Description = course.Description,
                 Price = course.Price,
-                LogoUrl = media?.Url?? "",
+                LogoUrl = media?.Url ?? "",
                 UserId = course.UserId,
+                IsPdf=course.IsPdf,
+                PdfUrl=course.PdfUrl,
+                LectureCount=0,
                 UserName = course.User?.Name ?? "",
+                TeacherLogoUrl = mediaUser?.Url ?? "",
                 CollegeId = course.CollegeId,
                 CollegeName = course.College?.Name ?? "",
+                Rating=0,
                 AlreadyJoin = alreadyJoinCourses.Contains(course.Id),
                 AlreadyRequest = alreadyRequestCourses.Contains(course.Id),
                 SubjectId = course.Subject?.Id,
@@ -281,10 +295,136 @@ namespace Dev.Acadmy.Courses
                 ChapterCount = course.Chapters.Count,
                 DurationInWeeks = course.DurationInDays / 7,
                 IntroductionVideoUrl = course.IntroductionVideoUrl,
-                Infos = course.CourseInfos.Select(x=>x.Name).ToList()
+                Infos = course.CourseInfos.Select(x => x.Name).ToList(),
+                courseChaptersDtos = chapters
             };
             return new ResponseApi<CourseInfoHomeDto>() { Data= courseDto ,Success=true , Message="Find Course Success"};
         }
+
+        public async Task<List<CourseChaptersDto>> GetCourseChaptersListAsync(Guid courseId, bool IsFree)
+        {
+            var userId = _currentUser.GetId();
+
+            // ✅ الكويزات التي أجابها المستخدم مسبقاً
+            var answeredLectureIds = await (await _quizStudentRepository.GetQueryableAsync())
+                .Where(qs => qs.UserId == userId)
+                .Select(qs => qs.LectureId)
+                .ToListAsync();
+
+            // ✅ كل محاولات المستخدم على المحاضرات
+            var lectureTries = await (await _lectureTryRepository.GetQueryableAsync())
+                .Where(lt => lt.UserId == userId)
+                .ToListAsync();
+
+            var queryable = await _chapterRepository.GetQueryableAsync();
+            var query = queryable
+                .Include(x => x.Course)
+                .Include(c => c.Lectures)
+                    .ThenInclude(l => l.Quizzes)
+                        .ThenInclude(q => q.Questions)
+                .Where(c => c.CourseId == courseId);
+
+            // ✅ لو المستخدم طالب فقط الدروس أو الفصول المجانية
+            if (IsFree)
+            {
+                query = query.Where(c => c.IsFree || c.Lectures.Any(l => l.IsFree));
+            }
+
+            var chapters = await query
+                .OrderBy(c => c.CreationTime)
+                .ToListAsync();
+
+            var chapterInfoDtos = new List<CourseChaptersDto>();
+
+            foreach (var c in chapters)
+            {
+                var lectureDtos = new List<LectureInfoDto>();
+
+                // ✅ لو IsFree true → نعرض فقط المحاضرات المجانية داخل الشابتر
+                var lecturesQuery = c.Lectures.Where(x => x.IsVisible);
+                if (IsFree)
+                    lecturesQuery = lecturesQuery.Where(l => l.IsFree);
+
+                foreach (var l in lecturesQuery)
+                {
+                    var media = await _mediaItemManager.GetAsync(l.Id);
+
+                    var lectureTry = lectureTries.FirstOrDefault(x => x.LectureId == l.Id)
+                        ?? new LectureTry { LectureId = l.Id, UserId = userId, MyTryCount = 0 };
+
+                    int maxAttempts = l.Quizzes.Count > 0 ? l.Quizzes.Count : 1;
+                    var quizzes = l.Quizzes.OrderBy(q => q.CreationTime).ToList();
+
+                    QuizInfoDto quizDto;
+
+                    if (quizzes.Any())
+                    {
+                        int index = lectureTry.MyTryCount;
+                        if (index >= quizzes.Count || lectureTry.MyTryCount >= maxAttempts)
+                            index = quizzes.Count - 1;
+
+                        var nextQuiz = quizzes[index];
+
+                        quizDto = new QuizInfoDto
+                        {
+                            QuizId = nextQuiz.Id,
+                            Title = nextQuiz.Title,
+                            QuestionsCount = nextQuiz.Questions.Count,
+                            QuizTryCount = l.QuizTryCount,
+                            TryedCount = lectureTry.MyTryCount,
+                            AlreadyAnswer = answeredLectureIds.Contains(l.Id)
+                        };
+                    }
+                    else
+                    {
+                        quizDto = new QuizInfoDto
+                        {
+                            QuizId = Guid.Empty,
+                            Title = "لا يوجد كويز متاح",
+                            QuestionsCount = 0,
+                            QuizTryCount = 0,
+                            TryedCount = 0,
+                            AlreadyAnswer = false
+                        };
+                    }
+
+                    var lectureDto = new LectureInfoDto
+                    {
+                        LectureId = l.Id,
+                        Title = l.Title,
+                        Content = l.Content,
+                        VideoUrl = l.VideoUrl,
+                        Quiz = quizDto
+                    };
+
+                    var lecPdfs = await _mediaItemManager.GetListAsync(l.Id);
+                    foreach (var pdf in lecPdfs)
+                        if (!pdf.IsImage)
+                            lectureDto.PdfUrls.Add(pdf.Url);
+
+                    lectureDtos.Add(lectureDto);
+                }
+
+                var creatorCourse = await _userRepository.GetAsync(c.Course.UserId);
+                var mediaItemUser = await _mediaItemManager.GetAsync(creatorCourse.Id);
+
+                chapterInfoDtos.Add(new CourseChaptersDto
+                {
+                    CourseId = c.CourseId,
+                    CourseName = c.Course.Name,
+                    ChapterId = c.Id,
+                    ChapterName = c.Name,
+                    UserId = creatorCourse.Id,
+                    UserName = creatorCourse.Name,
+                    LogoUrl = mediaItemUser?.Url ?? string.Empty,
+                    LectureCount = lectureDtos.Count,
+                    Lectures = lectureDtos
+                });
+            }
+
+            return chapterInfoDtos;
+        }
+
 
         public async Task<PagedResultDto<LookupDto>> GetMyCoursesLookUpAsync()
         {

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Dev.Acadmy.Chapters;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,6 +18,7 @@ namespace Dev.Acadmy.Courses
         public string LogoUrl { get; set; }
         public Guid UserId { get; set; }
         public string UserName { get; set; }
+        public string TeacherLogoUrl { get; set; }
         public float Rating { get; set; } // average rating
         public Guid? CollegeId { get; set; }
         public string CollegeName { get; set; }
@@ -29,9 +31,9 @@ namespace Dev.Acadmy.Courses
         public int ChapterCount { get; set; }
         public int LectureCount { get; set; }
         public string IntroductionVideoUrl { get; set; }
-
         public int? DurationInWeeks { get; set; } // null if lifetime
         public ICollection<string> Infos { get;set;} = new List<string>();
+        public ICollection<CourseChaptersDto> courseChaptersDtos { get; set; } = new List<CourseChaptersDto>();
 
 
     }

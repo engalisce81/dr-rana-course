@@ -103,6 +103,9 @@ namespace Dev.Acadmy.Chapters
             return new PagedResultDto<LookupDto>(chapterDtos.Count, chapterDtos);
         }
 
+
+
+
         public async Task<PagedResultDto<CourseChaptersDto>> GetCourseChaptersAsync(Guid courseId, int pageNumber, int pageSize)
         {
             if (pageNumber <= 0) pageNumber = 1;
@@ -209,10 +212,10 @@ namespace Dev.Acadmy.Chapters
                         VideoUrl = l.VideoUrl,
                         Quiz = quizDto
                     });
-                    foreach (var dto in lectureDtos) 
-                    { 
+                    foreach (var dto in lectureDtos)
+                    {
                         var lecPdfs = await _mediaItemManager.GetListAsync(l.Id);
-                        foreach (var pdf in lecPdfs) if (!pdf.IsImage)  dto.PdfUrls.Add(pdf.Url);
+                        foreach (var pdf in lecPdfs) if (!pdf.IsImage) dto.PdfUrls.Add(pdf.Url);
                     }
                 }
                 var creatorCourse = await _userRepository.GetAsync(c.Course.UserId);
@@ -226,7 +229,7 @@ namespace Dev.Acadmy.Chapters
                     ChapterName = c.Name,
                     UserId = creatorCourse.Id,
                     UserName = creatorCourse.Name,
-                    LogoUrl = mediaItemUser?.Url??  string.Empty, 
+                    LogoUrl = mediaItemUser?.Url ?? string.Empty,
                     LectureCount = lectureDtos.Count,
                     Lectures = lectureDtos
                 });
