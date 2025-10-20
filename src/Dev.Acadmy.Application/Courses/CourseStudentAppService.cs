@@ -30,6 +30,10 @@ namespace Dev.Acadmy.Courses
         public async Task DeleteAllStudentInCourse(Guid courseId) => await _coursestudentManager.DeleteAllStudentInCourse(courseId);
         [Authorize]
         public async Task<PagedResultDto<StudentDegreeByCourseDto>> GetStudentDegreByCourseAsync(int pageNumber, int pageSize, Guid courseId, Guid userId) => await _coursestudentManager.GetStudentDegreByCourseAsync(pageNumber, pageSize, courseId, userId);
+        [Authorize(AcadmyPermissions.CourseStudents.View)]
+        public async Task<PagedResultDto<CourseStudentDto>> GetListStudentsAsync(int pageNumber, int pageSize, bool isSubscribe, string? search) => await _coursestudentManager.GetListStudentAsync (pageNumber, pageSize, isSubscribe, search);
+        [Authorize(AcadmyPermissions.CourseStudents.Delete)]
+        public async Task DeleteAllStudentInAllCourses() => await _coursestudentManager.DeleteAllStudentInAllCourses();
 
     }
 }

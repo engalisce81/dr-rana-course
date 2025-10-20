@@ -1,4 +1,5 @@
-﻿using Dev.Acadmy.LookUp;
+﻿using Dev.Acadmy.Lectures;
+using Dev.Acadmy.LookUp;
 using Dev.Acadmy.Permissions;
 using Dev.Acadmy.Response;
 using Microsoft.AspNetCore.Authorization;
@@ -36,6 +37,7 @@ namespace Dev.Acadmy.Courses
         public async Task<PagedResultDto<LookupDto>> GetMyCoursesLookUpAsync() => await _courseManager.GetMyCoursesLookUpAsync();
         [Authorize]
         public async Task<Guid> DuplicateCourseAsync(Guid courseId) => await _courseManager.DuplicateCourseAsync(courseId);
-
+        [Authorize]
+        public async Task<PagedResultDto<LectureWithQuizzesDto>> GetStudentQuizzesByCourseAsync(Guid courseId, Guid userId, int pageNumber, int pageSize)=> await _courseManager.GetStudentQuizzesByCourseAsync(courseId, userId, pageNumber, pageSize);
     }
 }

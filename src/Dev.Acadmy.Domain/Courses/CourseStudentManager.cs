@@ -73,6 +73,28 @@ namespace Dev.Acadmy.Courses
             return new PagedResultDto<CourseStudentDto>(totalCount, coursestudentDtos);
         }
 
+        public async Task<PagedResultDto<CourseStudentDto>> GetListStudentAsync(int pageNumber, int pageSize, bool isSubscribe, string? search)
+        {
+            var roles = await _userRepository.GetRolesAsync(_currentUser.GetId());
+            var queryable = await _coursestudentRepository.GetQueryableAsync();
+            if (!string.IsNullOrWhiteSpace(search)) queryable = queryable.Include(x => x.Course).Include(x => x.User).Where(c => c.Course.Name.Contains(search) || c.User.Name.Contains(search));
+            var totalCount = await AsyncExecuter.CountAsync(queryable.Where(x => x.IsSubscibe == isSubscribe ));
+            var coursestudents = new List<CourseStudent>();
+            if (roles.Any(x => x.Name.ToUpper() == RoleConsts.Admin.ToUpper())) coursestudents = await AsyncExecuter.ToListAsync(queryable.Include(x => x.Course).Include(x => x.User).Where(x => x.IsSubscibe == isSubscribe ).OrderByDescending(c => c.CreationTime).Skip((pageNumber - 1) * pageSize).Take(pageSize));
+            else coursestudents = await AsyncExecuter.ToListAsync(queryable.Include(x => x.Course).Include(x => x.User).Where(c => c.Course.UserId == _currentUser.GetId() && c.IsSubscibe == isSubscribe ).OrderByDescending(c => c.CreationTime).Skip((pageNumber - 1) * pageSize).Take(pageSize));
+            var coursestudentDtos = _mapper.Map<List<CourseStudentDto>>(coursestudents);
+            foreach (var dto in coursestudentDtos)
+            {
+                var user = await _userRepository.GetAsync(dto.UserId);
+                dto.Name = user.Name;
+                var medaiItem = await _mediaItemManager.GetAsync(user.Id);
+                dto.LogoUrl = medaiItem?.Url ?? "";
+                dto.Email = user.Email;
+            }
+            return new PagedResultDto<CourseStudentDto>(totalCount, coursestudentDtos);
+        }
+
+
         public async Task<ResponseApi<CourseStudentDto>> CreateAsync(CreateUpdateCourseStudentDto input)
         {
             var coursestudent = _mapper.Map<CourseStudent>(input);
@@ -119,6 +141,15 @@ namespace Dev.Acadmy.Courses
             }
         }
 
+        public async Task DeleteAllStudentInAllCourses()
+        {
+            var queryable = await _coursestudentRepository.GetQueryableAsync();
+            var courseStudents = await queryable.ToListAsync();
+            foreach (var courseStudent in courseStudents)
+            {
+                await _coursestudentRepository.DeleteAsync(courseStudent);
+            }
+        }
         public async Task<PagedResultDto<StudentDegreeByCourseDto>> GetStudentDegreByCourseAsync(int pageNumber, int pageSize, Guid courseId, Guid userId)
         {
             // 🟢 1. الاستعلام الأساسي

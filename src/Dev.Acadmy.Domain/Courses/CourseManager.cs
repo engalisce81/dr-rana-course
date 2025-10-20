@@ -40,8 +40,10 @@ namespace Dev.Acadmy.Courses
         private readonly IRepository<QuizStudent, Guid> _quizStudentRepository;
         private readonly IRepository<Chapter, Guid> _chapterRepository;
         private readonly IRepository<LectureTry, Guid> _lectureTryRepository;
-        public CourseManager(IRepository<LectureTry, Guid> lectureTryRepository, IRepository<Chapter, Guid> chapterRepository,IRepository<QuizStudent, Guid> quizStudentRepository, QuestionManager questionManager, QuizManager quizManger, LectureManager lectureManager, CourseInfoManager courseInfoManager, ChapterManager chapterManager, IRepository<CourseStudent, Guid> courseStudentRepository, QuestionBankManager questionBankManager, IIdentityUserRepository userRepository, MediaItemManager mediaItemManager, ICurrentUser currentUser, IRepository<Course> courseRepository , IMapper mapper) 
+        private readonly IRepository<Lecture, Guid> _lectureRepository;
+        public CourseManager(IRepository<Lecture, Guid> lectureRepository, IRepository<LectureTry, Guid> lectureTryRepository, IRepository<Chapter, Guid> chapterRepository,IRepository<QuizStudent, Guid> quizStudentRepository, QuestionManager questionManager, QuizManager quizManger, LectureManager lectureManager, CourseInfoManager courseInfoManager, ChapterManager chapterManager, IRepository<CourseStudent, Guid> courseStudentRepository, QuestionBankManager questionBankManager, IIdentityUserRepository userRepository, MediaItemManager mediaItemManager, ICurrentUser currentUser, IRepository<Course> courseRepository , IMapper mapper) 
         {
+            _lectureRepository = lectureRepository;
             _lectureTryRepository = lectureTryRepository;
             _chapterRepository = chapterRepository;
             _quizStudentRepository = quizStudentRepository;
@@ -618,5 +620,73 @@ namespace Dev.Acadmy.Courses
 
             return newCourse.Id;
         }
+
+
+        public async Task<PagedResultDto<LectureWithQuizzesDto>> GetStudentQuizzesByCourseAsync(Guid courseId, Guid userId, int pageNumber, int pageSize)
+        {
+            if (pageNumber <= 0) pageNumber = 1;
+            if (pageSize <= 0) pageSize = 10;
+
+            // ✅ نجيب كل المحاضرات داخل الكورس
+            var lecturesQuery = await (await _lectureRepository.GetQueryableAsync())
+                .Include(l => l.Quizzes)
+                    .ThenInclude(q => q.Questions)
+                        .ThenInclude(qq => qq.QuestionAnswers)
+                .Include(l => l.Quizzes)
+                    .ThenInclude(q => q.Questions)
+                        .ThenInclude(qq => qq.QuestionType)
+                .Include(l => l.Chapter)
+                .Where(l => l.Chapter.CourseId == courseId)
+                .ToListAsync();
+
+            // ✅ نجيب كل الكويزات اللي الطالب جاوبها
+            var answeredQuizIds = await (await _quizStudentRepository.GetQueryableAsync())
+                .Where(qs => qs.UserId == userId)
+                .Select(qs => qs.QuizId)
+                .ToListAsync();
+
+            // ✅ نجيب فقط المحاضرات اللي فيها كويزات جاوبها الطالب
+            var filteredLectures = lecturesQuery
+                .Where(l => l.Quizzes.Any(q => answeredQuizIds.Contains(q.Id)))
+                .OrderByDescending(l => l.CreationTime)
+                .ToList();
+
+            var totalCount = filteredLectures.Count;
+
+            var pagedLectures = filteredLectures
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            var resultDtos = pagedLectures.Select(lecture => new LectureWithQuizzesDto
+            {
+                Id = lecture.Id,
+                Title = lecture.Title,
+                Quizzes = lecture.Quizzes
+                    .Where(q => answeredQuizIds.Contains(q.Id))
+                    .Select(q => new QuizWithQuestionsDto
+                    {
+                        Id = q.Id,
+                        Title = q.Title,
+                        Questions = q.Questions.Select(ques => new QuestionWithAnswersDto
+                        {
+                            Id = ques.Id,
+                            Title = ques.Title,
+                            Score = ques.Score,
+                            QuestionTypeId = ques.QuestionTypeId,
+                            QuestionTypeName = ques.QuestionType?.Name ?? "",
+                            Answers = ques.QuestionAnswers.Select(ans => new QuestionAnswerPanelDto
+                            {
+                                Id = ans.Id,
+                                Answer = ans.Answer,
+                                IsCorrect = ans.IsCorrect
+                            }).ToList()
+                        }).ToList()
+                    }).ToList()
+            }).ToList();
+
+            return new PagedResultDto<LectureWithQuizzesDto>(totalCount, resultDtos);
+        }
+
     }
 }
