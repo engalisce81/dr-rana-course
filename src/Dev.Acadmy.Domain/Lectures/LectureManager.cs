@@ -259,5 +259,11 @@ namespace Dev.Acadmy.Lectures
         }
 
 
+        public async Task<ResponseApi<int>> UserTryCount(Guid userId,Guid lecId)
+        {
+            var count = await _lectureTryRepository.CountAsync(x => x.UserId == userId && x.LectureId == lecId);
+            return new ResponseApi<int> { Data = count ,Message="get count" ,Success =true};
+        }
+
     }
 }
