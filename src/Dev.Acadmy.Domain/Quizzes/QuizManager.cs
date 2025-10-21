@@ -518,9 +518,14 @@ namespace Dev.Acadmy.Quizzes
                 await _quizStudentAnswerRepository.InsertAsync(answerEntity, autoSave: true);
             }
 
+            // ✅ تحديث عدد المحاولات (TryCount) في QuizStudent
+            quizStudent.TryCount += 1;
             // ✅ تحديث الدرجة النهائية
             quizStudent.Score = (int)Math.Round(studentScore);
+
+            // ✅ حفظ التحديث
             await _quizStudentRepository.UpdateAsync(quizStudent, autoSave: true);
+
 
             // ✅ تحديث أو إنشاء LectureTry
             var lectureTry = await _lectureTryRepository

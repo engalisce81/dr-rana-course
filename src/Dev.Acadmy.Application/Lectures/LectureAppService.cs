@@ -40,7 +40,7 @@ namespace Dev.Acadmy.Lectures
         // this in fuature i will take to admin panel
         [Authorize]
         public async Task<ResponseApi<LectureQuizResultDto>> GetLectureQuizResultsAsync(Guid lectureId) => await _quizManager.GetLectureQuizResultsAsync(lectureId);
-        [Authorize]
+        [AllowAnonymous]
         public async Task<ResponseApi<LectureTryDto>> UserTryCount(Guid userId, Guid lecId,Guid quizId) => await _lectureManager.UserTryCount(userId, lecId ,quizId);
 
     }

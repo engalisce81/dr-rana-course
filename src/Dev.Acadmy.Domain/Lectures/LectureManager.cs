@@ -266,9 +266,9 @@ namespace Dev.Acadmy.Lectures
             var count = await _lectureTryRepository.CountAsync(x => x.UserId == userId && x.LectureId == lecId);
             var lecture = await _lectureRepository.GetAsync(lecId);
             var isSucces = await _lectureTryRepository.AnyAsync(x => x.UserId == userId && x.LectureId == lecId && x.IsSucces == true);
-            var rate = await _quizStudentRepository.FirstOrDefaultAsync(x => x.UserId == userId && x.LectureId == lecId && x.QuizId == quizId);
-            var lecturetry = new LectureTryDto { MyTryCount = count, LectureTryCount = lecture.QuizTryCount, IsSucces = isSucces, SuccessQuizRate = lecture.SuccessQuizRate ,MyScoreRate=rate?.Score??0};
-            return new ResponseApi<LectureTryDto >{ Data = lecturetry, Message="get count" ,Success =true};
+            var quizStudent = await (await _quizStudentRepository.GetQueryableAsync()).FirstOrDefaultAsync(x => x.UserId == userId && x.LectureId == lecId && x.QuizId == quizId);
+            var lecturetry = new LectureTryDto { MyTryCount = count, LectureTryCount = lecture.QuizTryCount * lecture.Quizzes.Count, IsSucces = isSucces, SuccessQuizRate = lecture.SuccessQuizRate ,MyScoreRate= quizStudent?.Score??0};
+            return new ResponseApi<LectureTryDto>{ Data = lecturetry, Message="get count" ,Success =true};
         }
 
     }
