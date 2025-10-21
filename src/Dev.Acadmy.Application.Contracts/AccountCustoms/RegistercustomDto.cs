@@ -8,6 +8,7 @@ namespace Dev.Acadmy.AccountCustoms
         public string UserName { get; set; }
         public string Password { get; set; }
         public bool Gender { get; set; }
+        public string PhoneNumber { get; set; }
         public Guid CollegeId { get; set; }
         public Guid UniversityId { get; set; }
         public Guid? GradeLevelId { get; set; }

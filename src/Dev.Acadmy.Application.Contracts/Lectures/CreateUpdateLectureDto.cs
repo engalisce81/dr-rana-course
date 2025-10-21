@@ -17,6 +17,7 @@ namespace Dev.Acadmy.Lectures
         public int QuizTryCount { get; set; }
         public int QuizCount { get; set; }
         public bool IsFree { get; set; }
+        public int SuccessQuizRate { get; set; }
         public ICollection<string> PdfUrls { get; set; } = new List<string>();
 
     }

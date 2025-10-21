@@ -19,6 +19,7 @@ namespace Dev.Acadmy.Lectures
         public bool IsFree { get; set; }
         public bool IsVisible { get; set; }
         public int QuizTryCount { get; set; }
+        public int SuccessQuizRate { get; set; }
 
         [ForeignKey(nameof(ChapterId))]
         public Chapters.Chapter Chapter { get; set; }

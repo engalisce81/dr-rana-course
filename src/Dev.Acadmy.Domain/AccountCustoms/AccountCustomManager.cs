@@ -72,6 +72,8 @@ namespace Dev.Acadmy.AccountCustoms
             user.SetProperty(SetPropConsts.CollegeId, input.CollegeId);
             user.SetProperty(SetPropConsts.Gender,input.Gender);
             user.SetProperty(SetPropConsts.UniversityId, input.UniversityId);
+            user.SetProperty(SetPropConsts.PhoneNumber, input.PhoneNumber);
+
             if (accountType.Key == (int)AccountTypeKey.Student)
             {
                 user.SetProperty(SetPropConsts.GradeLevelId, input.GradeLevelId);

@@ -28,8 +28,10 @@ namespace Dev.Acadmy.Lectures
         private readonly MediaItemManager _mediaItemManager;
         private readonly IRepository<LectureStudent ,Guid> _lectureStudentRepository;
         private readonly IRepository<LectureTry , Guid> _lectureTryRepository;
-        public LectureManager(IRepository<LectureTry, Guid> lectureTryRepository, IRepository<LectureStudent, Guid> lectureStudentRepository, MediaItemManager mediaItemManager, IRepository<Quiz,Guid> quizRepository, QuizManager quizManager, ICurrentUser currentUser, IIdentityUserRepository userRepository, IMapper mapper, IRepository<Lecture,Guid> lectureRepository)
+        private readonly IRepository<QuizStudent, Guid> _quizStudentRepository;
+        public LectureManager(IRepository<QuizStudent, Guid> quizStudentRepository, IRepository<LectureTry, Guid> lectureTryRepository, IRepository<LectureStudent, Guid> lectureStudentRepository, MediaItemManager mediaItemManager, IRepository<Quiz,Guid> quizRepository, QuizManager quizManager, ICurrentUser currentUser, IIdentityUserRepository userRepository, IMapper mapper, IRepository<Lecture,Guid> lectureRepository)
         {
+            _quizStudentRepository = quizStudentRepository;
             _lectureTryRepository = lectureTryRepository;
             _lectureStudentRepository = lectureStudentRepository;
             _mediaItemManager = mediaItemManager;
@@ -259,9 +261,13 @@ namespace Dev.Acadmy.Lectures
         }
 
 
-        public async Task<ResponseApi<int>> UserTryCount(Guid userId,Guid lecId)
+        public async Task<ResponseApi<int>> UserTryCount(Guid userId,Guid lecId ,Guid quizId)
         {
             var count = await _lectureTryRepository.CountAsync(x => x.UserId == userId && x.LectureId == lecId);
+            var lecture = await _lectureRepository.GetAsync(lecId);
+            var isSucces = await _lectureTryRepository.AnyAsync(x => x.UserId == userId && x.LectureId == lecId && x.IsSucces == true);
+            var rate = await _quizStudentRepository.FirstOrDefaultAsync(x => x.UserId == userId && x.LectureId == lecId && x.QuizId == quizId);
+            var lecturetry = new LectureTryDto { MyTryCount = count, LectureTryCount = lecture.QuizTryCount, IsSucces = isSucces, SuccessQuizRate = lecture.SuccessQuizRate ,MyScoreRate=rate?.Score??0};
             return new ResponseApi<int> { Data = count ,Message="get count" ,Success =true};
         }
 
