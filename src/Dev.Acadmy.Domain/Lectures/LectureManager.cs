@@ -173,14 +173,14 @@ namespace Dev.Acadmy.Lectures
                 .FirstOrDefaultAsync(q => q.Id == quizId);
 
             if (quiz == null) throw new UserFriendlyException("Quiz not found");
-            var tryCount = await _lectureTryRepository.FirstOrDefaultAsync(x=>x.LectureId ==(Guid) quiz.LectureId && x.UserId ==_currentUser.GetId());
-            if(tryCount == null) tryCount =  await _lectureTryRepository.InsertAsync(new LectureTry { LectureId =(Guid) quiz.LectureId, UserId = _currentUser.GetId(), MyTryCount = 1 },autoSave:true);
-            else
-            {
-                if (tryCount.MyTryCount >= quiz.Lecture.QuizTryCount) throw new UserFriendlyException("You have reached the maximum number of attempts for this quiz.");
-                tryCount.MyTryCount += 1;
-                await _lectureTryRepository.UpdateAsync(tryCount ,autoSave:true);
-            }
+            //var tryCount = await _lectureTryRepository.FirstOrDefaultAsync(x=>x.LectureId ==(Guid) quiz.LectureId && x.UserId ==_currentUser.GetId());
+            //if(tryCount == null) tryCount =  await _lectureTryRepository.InsertAsync(new LectureTry { LectureId =(Guid) quiz.LectureId, UserId = _currentUser.GetId(), MyTryCount = 1 },autoSave:true);
+            //else
+            //{
+            //    if (tryCount.MyTryCount >= quiz.Lecture.QuizTryCount) throw new UserFriendlyException("You have reached the maximum number of attempts for this quiz.");
+            //    tryCount.MyTryCount += 1;
+            //    await _lectureTryRepository.UpdateAsync(tryCount ,autoSave:true);
+            //}
             var dto = new QuizDetailsDto
             {
                 QuizId = quiz.Id,
@@ -263,11 +263,11 @@ namespace Dev.Acadmy.Lectures
 
         public async Task<ResponseApi<LectureTryDto>> UserTryCount(Guid userId,Guid lecId ,Guid quizId)
         {
-            var count = await _lectureTryRepository.CountAsync(x => x.UserId == userId && x.LectureId == lecId);
-            var lecture = await _lectureRepository.GetAsync(lecId);
+            var trys = await _lectureTryRepository.FirstOrDefaultAsync(x => x.UserId == userId && x.LectureId == lecId);
+            var lecture = await (await _lectureRepository.GetQueryableAsync()).Include(x=>x.Quizzes).FirstOrDefaultAsync(x=>x.Id == lecId);
             var isSucces = await _lectureTryRepository.AnyAsync(x => x.UserId == userId && x.LectureId == lecId && x.IsSucces == true);
             var quizStudent = await (await _quizStudentRepository.GetQueryableAsync()).FirstOrDefaultAsync(x => x.UserId == userId && x.LectureId == lecId && x.QuizId == quizId);
-            var lecturetry = new LectureTryDto { MyTryCount = count, LectureTryCount = lecture.QuizTryCount * lecture.Quizzes.Count, IsSucces = isSucces, SuccessQuizRate = lecture.SuccessQuizRate ,MyScoreRate= quizStudent?.Score??0};
+            var lecturetry = new LectureTryDto { MyTryCount = trys.MyTryCount, LectureTryCount = lecture.QuizTryCount * lecture.Quizzes.Count, IsSucces = isSucces, SuccessQuizRate = lecture.SuccessQuizRate ,MyScoreRate= quizStudent?.Score??0};
             return new ResponseApi<LectureTryDto>{ Data = lecturetry, Message="get count" ,Success =true};
         }
 

@@ -473,19 +473,36 @@ namespace Dev.Acadmy.Quizzes
                     case QuestionTypeEnum.ShortAnswer:
                         if (!string.IsNullOrWhiteSpace(studentAnswer.TextAnswer))
                         {
-                            var keywords = question.QuestionAnswers.Select(a => a.Answer.ToLower()).ToList();
-                            var studentText = studentAnswer.TextAnswer.ToLower();
+                            // ✅ نجيب كل الكلمات المفتاحية من الإجابات الصحيحة
+                            var keywords = question.QuestionAnswers
+                                .SelectMany(a => a.Answer
+                                    .ToLower()
+                                    .Split(new[] { ' ', ',', '.', ';', ':', '!', '?', '-', '_', '/' }, StringSplitOptions.RemoveEmptyEntries))
+                                .Distinct()
+                                .ToList();
 
-                            int matched = keywords.Count(k => studentText.Contains(k));
+                            // ✅ نقسم إجابة الطالب إلى كلمات
+                            var studentWords = studentAnswer.TextAnswer
+                                .ToLower()
+                                .Split(new[] { ' ', ',', '.', ';', ':', '!', '?', '-', '_', '/' }, StringSplitOptions.RemoveEmptyEntries)
+                                .Distinct()
+                                .ToList();
+
+                            // ✅ نحسب عدد الكلمات المطابقة
+                            int matched = studentWords.Count(w => keywords.Contains(w));
+
                             if (matched > 0)
                             {
                                 double ratio = (double)matched / keywords.Count;
                                 obtained = question.Score * ratio;
                                 studentScore += obtained;
+
+                                // ✅ نعتبر الإجابة صحيحة لو نسبة التشابه ≥ 80%
                                 isCorrect = ratio >= 0.8;
                             }
                         }
                         break;
+
 
                     case QuestionTypeEnum.CompleteAnswer:
                         if (!string.IsNullOrWhiteSpace(studentAnswer.TextAnswer))

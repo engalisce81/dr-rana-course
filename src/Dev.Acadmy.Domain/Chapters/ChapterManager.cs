@@ -191,7 +191,7 @@ namespace Dev.Acadmy.Chapters
                             QuizId = nextQuiz.Id,
                             Title = nextQuiz.Title,
                             QuestionsCount = nextQuiz.Questions.Count,
-                            QuizTryCount = nextQuiz.QuizTryCount,
+                            QuizTryCount = l.QuizTryCount*l.Quizzes.Count,
                             TryedCount = userQuizAttempts.FirstOrDefault(q => q.QuizId == nextQuiz.Id)?.TryCount ?? 0,
                             AlreadyAnswer = userQuizAttempts.Any(q => q.LectureId == l.Id)
                         };
