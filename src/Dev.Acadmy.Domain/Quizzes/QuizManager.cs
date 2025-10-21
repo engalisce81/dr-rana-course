@@ -392,205 +392,437 @@ namespace Dev.Acadmy.Quizzes
         }
 
 
+        //public async Task<ResponseApi<QuizResultDto>> SubmitQuizAsync(QuizAnswerDto input)
+        //{
+        //    var userId = _currentUser.GetId();
+
+        //    var quiz = await (await _quizRepository.GetQueryableAsync())
+        //        .Include(q => q.Questions)
+        //            .ThenInclude(q => q.QuestionAnswers)
+        //        .Include(q => q.Questions)
+        //            .ThenInclude(q => q.QuestionType)
+        //        .Include(x => x.Lecture)
+        //        .FirstOrDefaultAsync(q => q.Id == input.QuizId);
+
+        //    if (quiz == null)
+        //        throw new UserFriendlyException("Quiz not found");
+
+        //    var lecture = quiz.Lecture;
+        //    if (lecture == null)
+        //        throw new UserFriendlyException("Lecture not found for this quiz");
+
+        //    // ✅ تحقق هل الطالب جاوب الكويز قبل كده
+        //    var quizStudent = await (await _quizStudentRepository.GetQueryableAsync())
+        //        .Include(x => x.Answers)
+        //        .FirstOrDefaultAsync(x => x.UserId == userId && x.QuizId == input.QuizId);
+
+        //    // ✅ لو جاوب قبل كده نحذف إجاباته القديمة
+        //    if (quizStudent != null)
+        //    {
+        //        var oldAnswers = await _quizStudentAnswerRepository
+        //            .GetListAsync(x => x.QuizStudentId == quizStudent.Id);
+
+        //        foreach (var old in oldAnswers)
+        //        {
+        //            await _quizStudentAnswerRepository.DeleteAsync(old, autoSave: true);
+        //        }
+        //    }
+        //    else
+        //    {
+        //        // ✅ لو أول مرة يجاوب الكويز، نعمل سجل جديد
+        //        quizStudent = new QuizStudent
+        //        {
+        //            LectureId = lecture.Id,
+        //            UserId = userId,
+        //            QuizId = quiz.Id,
+        //            Score = 0
+        //        };
+
+        //        await _quizStudentRepository.InsertAsync(quizStudent, autoSave: true);
+        //    }
+
+        //    double totalScore = 0;
+        //    double studentScore = 0;
+
+        //    // ✅ لف على الأسئلة
+        //    foreach (var question in quiz.Questions)
+        //    {
+        //        var studentAnswer = input.Answers.FirstOrDefault(a => a.QuestionId == question.Id);
+        //        if (studentAnswer == null)
+        //            continue;
+
+        //        bool isCorrect = false;
+        //        double obtained = 0;
+
+        //        switch ((QuestionTypeEnum)question.QuestionType.Key)
+        //        {
+        //            case QuestionTypeEnum.MCQ:
+        //            case QuestionTypeEnum.TrueOrFalse:
+        //                if (studentAnswer.SelectedAnswerId != null)
+        //                {
+        //                    var correctAnswer = question.QuestionAnswers.FirstOrDefault(a => a.IsCorrect);
+        //                    if (correctAnswer != null && correctAnswer.Id == studentAnswer.SelectedAnswerId)
+        //                    {
+        //                        isCorrect = true;
+        //                        obtained = question.Score;
+        //                        studentScore += question.Score;
+        //                    }
+        //                }
+        //                break;
+
+        //            case QuestionTypeEnum.ShortAnswer:
+        //                if (!string.IsNullOrWhiteSpace(studentAnswer.TextAnswer))
+        //                {
+        //                    // ✅ نجيب كل الكلمات المفتاحية من الإجابات الصحيحة
+        //                    var keywords = question.QuestionAnswers
+        //                        .SelectMany(a => a.Answer
+        //                            .ToLower()
+        //                            .Split(new[] { ' ', ',', '.', ';', ':', '!', '?', '-', '_', '/' }, StringSplitOptions.RemoveEmptyEntries))
+        //                        .Distinct()
+        //                        .ToList();
+
+        //                    // ✅ نقسم إجابة الطالب إلى كلمات
+        //                    var studentWords = studentAnswer.TextAnswer
+        //                        .ToLower()
+        //                        .Split(new[] { ' ', ',', '.', ';', ':', '!', '?', '-', '_', '/' }, StringSplitOptions.RemoveEmptyEntries)
+        //                        .Distinct()
+        //                        .ToList();
+
+        //                    // ✅ نحسب عدد الكلمات المطابقة
+        //                    int matched = studentWords.Count(w => keywords.Contains(w));
+
+        //                    if (matched > 0)
+        //                    {
+        //                        double ratio = (double)matched / keywords.Count;
+        //                        obtained = question.Score * ratio;
+        //                        studentScore += obtained;
+
+        //                        // ✅ نعتبر الإجابة صحيحة لو نسبة التشابه ≥ 80%
+        //                        isCorrect = ratio >= 0.8;
+        //                    }
+        //                }
+        //                break;
+
+
+        //            case QuestionTypeEnum.CompleteAnswer:
+        //                if (!string.IsNullOrWhiteSpace(studentAnswer.TextAnswer))
+        //                {
+        //                    var correctAnswer = question.QuestionAnswers.FirstOrDefault(a => a.IsCorrect);
+        //                    if (correctAnswer != null &&
+        //                        string.Equals(studentAnswer.TextAnswer.Trim(), correctAnswer.Answer.Trim(), StringComparison.OrdinalIgnoreCase))
+        //                    {
+        //                        obtained = question.Score;
+        //                        studentScore += question.Score;
+        //                        isCorrect = true;
+        //                    }
+        //                }
+        //                break;
+        //        }
+
+        //        totalScore += question.Score;
+
+        //        // ✅ إنشاء الإجابة الجديدة
+        //        var answerEntity = new QuizStudentAnswer
+        //        {
+        //            QuizStudentId = quizStudent.Id,
+        //            QuestionId = question.Id,
+        //            SelectedAnswerId = studentAnswer.SelectedAnswerId,
+        //            TextAnswer = studentAnswer.TextAnswer,
+        //            IsCorrect = isCorrect,
+        //            ScoreObtained = obtained
+        //        };
+
+        //        await _quizStudentAnswerRepository.InsertAsync(answerEntity, autoSave: true);
+        //    }
+
+        //    // ✅ تحديث عدد المحاولات (TryCount) في QuizStudent
+        //    quizStudent.TryCount += 1;
+        //    // ✅ تحديث الدرجة النهائية
+        //    quizStudent.Score = (int)Math.Round(studentScore);
+
+        //    // ✅ حفظ التحديث
+        //    await _quizStudentRepository.UpdateAsync(quizStudent, autoSave: true);
+
+
+        //    // ✅ تحديث أو إنشاء LectureTry
+        //    var lectureTry = await _lectureTryRepository
+        //        .FirstOrDefaultAsync(x => x.LectureId == lecture.Id && x.UserId == userId);
+
+        //    if (lectureTry == null)
+        //    {
+        //        lectureTry = new LectureTry
+        //        {
+        //            LectureId = lecture.Id,
+        //            UserId = userId,
+        //            MyTryCount = 1,
+        //            IsSucces = false
+        //        };
+
+        //        await _lectureTryRepository.InsertAsync(lectureTry, autoSave: true);
+        //    }
+        //    else
+        //    {
+        //        lectureTry.MyTryCount += 1;
+        //    }
+
+        //    // ✅ استخدم نسبة النجاح من المحاضرة
+        //    double requiredRate = lecture.SuccessQuizRate / 100.0; // تحويل من 70 إلى 0.7 مثلًا
+
+        //    if (totalScore > 0 && (studentScore / totalScore) >= requiredRate)
+        //    {
+        //        lectureTry.IsSucces = true;
+        //    }
+        //    else
+        //    {
+        //        lectureTry.IsSucces = false;
+        //    }
+
+        //    await _lectureTryRepository.UpdateAsync(lectureTry, autoSave: true);
+
+        //    return new ResponseApi<QuizResultDto>
+        //    {
+        //        Data = new QuizResultDto
+        //        {
+        //            QuizId = quiz.Id,
+        //            TotalScore = totalScore,
+        //            StudentScore = studentScore
+        //        },
+        //        Success = true,
+        //        Message = "Quiz submitted and updated successfully"
+        //    };
+        //}
+
+
+
         public async Task<ResponseApi<QuizResultDto>> SubmitQuizAsync(QuizAnswerDto input)
+{
+    var userId = _currentUser.GetId();
+
+    var quiz = await (await _quizRepository.GetQueryableAsync())
+        .Include(q => q.Questions)
+            .ThenInclude(q => q.QuestionAnswers)
+        .Include(q => q.Questions)
+            .ThenInclude(q => q.QuestionType)
+        .Include(x => x.Lecture)
+        .FirstOrDefaultAsync(q => q.Id == input.QuizId);
+
+    if (quiz == null)
+        throw new UserFriendlyException("Quiz not found");
+
+    var lecture = quiz.Lecture;
+    if (lecture == null)
+        throw new UserFriendlyException("Lecture not found for this quiz");
+
+    // ✅ تحقق هل الطالب جاوب الكويز قبل كده
+    var quizStudent = await (await _quizStudentRepository.GetQueryableAsync())
+        .Include(x => x.Answers)
+        .FirstOrDefaultAsync(x => x.UserId == userId && x.QuizId == input.QuizId);
+
+    // ✅ لو جاوب قبل كده نحذف إجاباته القديمة
+    if (quizStudent != null)
+    {
+        var oldAnswers = await _quizStudentAnswerRepository
+            .GetListAsync(x => x.QuizStudentId == quizStudent.Id);
+
+        foreach (var old in oldAnswers)
         {
-            var userId = _currentUser.GetId();
-
-            var quiz = await (await _quizRepository.GetQueryableAsync())
-                .Include(q => q.Questions)
-                    .ThenInclude(q => q.QuestionAnswers)
-                .Include(q => q.Questions)
-                    .ThenInclude(q => q.QuestionType)
-                .Include(x => x.Lecture)
-                .FirstOrDefaultAsync(q => q.Id == input.QuizId);
-
-            if (quiz == null)
-                throw new UserFriendlyException("Quiz not found");
-
-            var lecture = quiz.Lecture;
-            if (lecture == null)
-                throw new UserFriendlyException("Lecture not found for this quiz");
-
-            // ✅ تحقق هل الطالب جاوب الكويز قبل كده
-            var quizStudent = await (await _quizStudentRepository.GetQueryableAsync())
-                .Include(x => x.Answers)
-                .FirstOrDefaultAsync(x => x.UserId == userId && x.QuizId == input.QuizId);
-
-            // ✅ لو جاوب قبل كده نحذف إجاباته القديمة
-            if (quizStudent != null)
-            {
-                var oldAnswers = await _quizStudentAnswerRepository
-                    .GetListAsync(x => x.QuizStudentId == quizStudent.Id);
-
-                foreach (var old in oldAnswers)
-                {
-                    await _quizStudentAnswerRepository.DeleteAsync(old, autoSave: true);
-                }
-            }
-            else
-            {
-                // ✅ لو أول مرة يجاوب الكويز، نعمل سجل جديد
-                quizStudent = new QuizStudent
-                {
-                    LectureId = lecture.Id,
-                    UserId = userId,
-                    QuizId = quiz.Id,
-                    Score = 0
-                };
-
-                await _quizStudentRepository.InsertAsync(quizStudent, autoSave: true);
-            }
-
-            double totalScore = 0;
-            double studentScore = 0;
-
-            // ✅ لف على الأسئلة
-            foreach (var question in quiz.Questions)
-            {
-                var studentAnswer = input.Answers.FirstOrDefault(a => a.QuestionId == question.Id);
-                if (studentAnswer == null)
-                    continue;
-
-                bool isCorrect = false;
-                double obtained = 0;
-
-                switch ((QuestionTypeEnum)question.QuestionType.Key)
-                {
-                    case QuestionTypeEnum.MCQ:
-                    case QuestionTypeEnum.TrueOrFalse:
-                        if (studentAnswer.SelectedAnswerId != null)
-                        {
-                            var correctAnswer = question.QuestionAnswers.FirstOrDefault(a => a.IsCorrect);
-                            if (correctAnswer != null && correctAnswer.Id == studentAnswer.SelectedAnswerId)
-                            {
-                                isCorrect = true;
-                                obtained = question.Score;
-                                studentScore += question.Score;
-                            }
-                        }
-                        break;
-
-                    case QuestionTypeEnum.ShortAnswer:
-                        if (!string.IsNullOrWhiteSpace(studentAnswer.TextAnswer))
-                        {
-                            // ✅ نجيب كل الكلمات المفتاحية من الإجابات الصحيحة
-                            var keywords = question.QuestionAnswers
-                                .SelectMany(a => a.Answer
-                                    .ToLower()
-                                    .Split(new[] { ' ', ',', '.', ';', ':', '!', '?', '-', '_', '/' }, StringSplitOptions.RemoveEmptyEntries))
-                                .Distinct()
-                                .ToList();
-
-                            // ✅ نقسم إجابة الطالب إلى كلمات
-                            var studentWords = studentAnswer.TextAnswer
-                                .ToLower()
-                                .Split(new[] { ' ', ',', '.', ';', ':', '!', '?', '-', '_', '/' }, StringSplitOptions.RemoveEmptyEntries)
-                                .Distinct()
-                                .ToList();
-
-                            // ✅ نحسب عدد الكلمات المطابقة
-                            int matched = studentWords.Count(w => keywords.Contains(w));
-
-                            if (matched > 0)
-                            {
-                                double ratio = (double)matched / keywords.Count;
-                                obtained = question.Score * ratio;
-                                studentScore += obtained;
-
-                                // ✅ نعتبر الإجابة صحيحة لو نسبة التشابه ≥ 80%
-                                isCorrect = ratio >= 0.8;
-                            }
-                        }
-                        break;
-
-
-                    case QuestionTypeEnum.CompleteAnswer:
-                        if (!string.IsNullOrWhiteSpace(studentAnswer.TextAnswer))
-                        {
-                            var correctAnswer = question.QuestionAnswers.FirstOrDefault(a => a.IsCorrect);
-                            if (correctAnswer != null &&
-                                string.Equals(studentAnswer.TextAnswer.Trim(), correctAnswer.Answer.Trim(), StringComparison.OrdinalIgnoreCase))
-                            {
-                                obtained = question.Score;
-                                studentScore += question.Score;
-                                isCorrect = true;
-                            }
-                        }
-                        break;
-                }
-
-                totalScore += question.Score;
-
-                // ✅ إنشاء الإجابة الجديدة
-                var answerEntity = new QuizStudentAnswer
-                {
-                    QuizStudentId = quizStudent.Id,
-                    QuestionId = question.Id,
-                    SelectedAnswerId = studentAnswer.SelectedAnswerId,
-                    TextAnswer = studentAnswer.TextAnswer,
-                    IsCorrect = isCorrect,
-                    ScoreObtained = obtained
-                };
-
-                await _quizStudentAnswerRepository.InsertAsync(answerEntity, autoSave: true);
-            }
-
-            // ✅ تحديث عدد المحاولات (TryCount) في QuizStudent
-            quizStudent.TryCount += 1;
-            // ✅ تحديث الدرجة النهائية
-            quizStudent.Score = (int)Math.Round(studentScore);
-
-            // ✅ حفظ التحديث
-            await _quizStudentRepository.UpdateAsync(quizStudent, autoSave: true);
-
-
-            // ✅ تحديث أو إنشاء LectureTry
-            var lectureTry = await _lectureTryRepository
-                .FirstOrDefaultAsync(x => x.LectureId == lecture.Id && x.UserId == userId);
-
-            if (lectureTry == null)
-            {
-                lectureTry = new LectureTry
-                {
-                    LectureId = lecture.Id,
-                    UserId = userId,
-                    MyTryCount = 1,
-                    IsSucces = false
-                };
-
-                await _lectureTryRepository.InsertAsync(lectureTry, autoSave: true);
-            }
-            else
-            {
-                lectureTry.MyTryCount += 1;
-            }
-
-            // ✅ استخدم نسبة النجاح من المحاضرة
-            double requiredRate = lecture.SuccessQuizRate / 100.0; // تحويل من 70 إلى 0.7 مثلًا
-
-            if (totalScore > 0 && (studentScore / totalScore) >= requiredRate)
-            {
-                lectureTry.IsSucces = true;
-            }
-            else
-            {
-                lectureTry.IsSucces = false;
-            }
-
-            await _lectureTryRepository.UpdateAsync(lectureTry, autoSave: true);
-
-            return new ResponseApi<QuizResultDto>
-            {
-                Data = new QuizResultDto
-                {
-                    QuizId = quiz.Id,
-                    TotalScore = totalScore,
-                    StudentScore = studentScore
-                },
-                Success = true,
-                Message = "Quiz submitted and updated successfully"
-            };
+            await _quizStudentAnswerRepository.DeleteAsync(old, autoSave: true);
         }
+    }
+    else
+    {
+        // ✅ لو أول مرة يجاوب الكويز
+        quizStudent = new QuizStudent
+        {
+            LectureId = lecture.Id,
+            UserId = userId,
+            QuizId = quiz.Id,
+            Score = 0
+        };
+
+        await _quizStudentRepository.InsertAsync(quizStudent, autoSave: true);
+    }
+
+    double totalScore = 0;
+    double studentScore = 0;
+
+    // ✅ لف على كل الأسئلة في الكويز
+    foreach (var question in quiz.Questions)
+    {
+        var studentAnswers = input.Answers
+            .Where(a => a.QuestionId == question.Id)
+            .ToList();
+
+        if (studentAnswers == null || !studentAnswers.Any())
+            continue;
+
+        bool isCorrect = false;
+        double obtained = 0;
+
+        switch ((QuestionTypeEnum)question.QuestionType.Key)
+        {
+            case QuestionTypeEnum.MCQ:
+            case QuestionTypeEnum.TrueOrFalse:
+                var selected = studentAnswers.FirstOrDefault(a => a.SelectedAnswerId != null);
+                if (selected?.SelectedAnswerId != null)
+                {
+                    var correctAnswer = question.QuestionAnswers.FirstOrDefault(a => a.IsCorrect);
+                    if (correctAnswer != null && correctAnswer.Id == selected.SelectedAnswerId)
+                    {
+                        isCorrect = true;
+                        obtained = question.Score;
+                        studentScore += question.Score;
+                    }
+                }
+                break;
+
+            case QuestionTypeEnum.ShortAnswer:
+                {
+                    var studentTexts = studentAnswers
+                        .Where(a => !string.IsNullOrWhiteSpace(a.TextAnswer))
+                        .Select(a => a.TextAnswer!.ToLower().Trim())
+                        .ToList();
+
+                    if (studentTexts.Any())
+                    {
+                        var keywords = question.QuestionAnswers
+                            .SelectMany(a => a.Answer
+                                .ToLower()
+                                .Split(new[] { ' ', ',', '.', ';', ':', '!', '?', '-', '_', '/' },
+                                    StringSplitOptions.RemoveEmptyEntries))
+                            .Distinct()
+                            .ToList();
+
+                        var studentWords = studentTexts
+                            .SelectMany(t => t
+                                .Split(new[] { ' ', ',', '.', ';', ':', '!', '?', '-', '_', '/' },
+                                    StringSplitOptions.RemoveEmptyEntries))
+                            .Distinct()
+                            .ToList();
+
+                        int matched = studentWords.Count(w => keywords.Contains(w));
+
+                        if (matched > 0)
+                        {
+                            double ratio = (double)matched / keywords.Count;
+                            obtained = question.Score * ratio;
+                            studentScore += obtained;
+
+                            // ✅ نعتبرها صحيحة لو التشابه ≥ 80%
+                            isCorrect = ratio >= 0.8;
+                        }
+                    }
+                }
+                break;
+
+            case QuestionTypeEnum.CompleteAnswer:
+                {
+                    var studentTexts = studentAnswers
+                        .Where(a => !string.IsNullOrWhiteSpace(a.TextAnswer))
+                        .Select(a => a.TextAnswer!.Trim().ToLower())
+                        .ToList();
+
+                    var correctAnswers = question.QuestionAnswers
+                        .Where(a => a.IsCorrect)
+                        .Select(a => a.Answer.Trim().ToLower())
+                        .ToList();
+
+                    if (correctAnswers.Any() && studentTexts.Any())
+                    {
+                        double eachScore = question.Score / correctAnswers.Count;
+                        double totalObtained = 0;
+                        bool allCorrect = true;
+
+                        for (int i = 0; i < correctAnswers.Count; i++)
+                        {
+                            if (i >= studentTexts.Count)
+                            {
+                                allCorrect = false;
+                                break;
+                            }
+
+                            if (studentTexts[i] == correctAnswers[i])
+                            {
+                                totalObtained += eachScore;
+                            }
+                            else
+                            {
+                                allCorrect = false;
+                            }
+                        }
+
+                        obtained = totalObtained;
+                        studentScore += totalObtained;
+                        isCorrect = allCorrect;
+                    }
+                }
+                break;
+        }
+
+        totalScore += question.Score;
+
+        // ✅ حفظ إجابات الطالب كلها في JSON
+        var combinedAnswers = studentAnswers
+            .Where(a => !string.IsNullOrWhiteSpace(a.TextAnswer))
+            .Select(a => a.TextAnswer)
+            .ToList();
+
+        var answerEntity = new QuizStudentAnswer
+        {
+            QuizStudentId = quizStudent.Id,
+            QuestionId = question.Id,
+            SelectedAnswerId = studentAnswers.FirstOrDefault()?.SelectedAnswerId,
+            TextAnswer = (combinedAnswers != null && combinedAnswers.Any())? string.Join(" | ", combinedAnswers): null,
+            IsCorrect = isCorrect,
+            ScoreObtained = obtained
+        };
+
+        await _quizStudentAnswerRepository.InsertAsync(answerEntity, autoSave: true);
+    }
+
+    // ✅ تحديث عدد المحاولات والدرجة
+    quizStudent.TryCount += 1;
+    quizStudent.Score = (int)Math.Round(studentScore);
+    await _quizStudentRepository.UpdateAsync(quizStudent, autoSave: true);
+
+    // ✅ إدارة LectureTry
+    var lectureTry = await _lectureTryRepository
+        .FirstOrDefaultAsync(x => x.LectureId == lecture.Id && x.UserId == userId);
+
+    if (lectureTry == null)
+    {
+        lectureTry = new LectureTry
+        {
+            LectureId = lecture.Id,
+            UserId = userId,
+            MyTryCount = 1,
+            IsSucces = false
+        };
+
+        await _lectureTryRepository.InsertAsync(lectureTry, autoSave: true);
+    }
+    else
+    {
+        lectureTry.MyTryCount += 1;
+    }
+
+    double requiredRate = lecture.SuccessQuizRate / 100.0;
+    lectureTry.IsSucces = totalScore > 0 && (studentScore / totalScore) >= requiredRate;
+
+    await _lectureTryRepository.UpdateAsync(lectureTry, autoSave: true);
+
+    return new ResponseApi<QuizResultDto>
+    {
+        Data = new QuizResultDto
+        {
+            QuizId = quiz.Id,
+            TotalScore = totalScore,
+            StudentScore = studentScore
+        },
+        Success = true,
+        Message = "Quiz submitted and updated successfully"
+    };
+}
 
 
     }

@@ -11,7 +11,7 @@ namespace Dev.Acadmy.Lectures
         public int MyTryCount { get; set; }
         public int LectureTryCount { get; set; }
         public int SuccessQuizRate { get; set; }
-        public int MyScoreRate { get; set; }
+        public double MyScoreRate { get; set; }
         public bool IsSucces { get; set; }
     }
 }
