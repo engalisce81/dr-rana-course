@@ -12,6 +12,7 @@ namespace Dev.Acadmy.Quizzes
         public Guid UserId { get; set; }
         public Guid QuizId { get; set; }
         public int Score { get; set; }
+        public int TryCount { get; set; }
 
         [ForeignKey(nameof(UserId))]
         public IdentityUser User { get; set; }

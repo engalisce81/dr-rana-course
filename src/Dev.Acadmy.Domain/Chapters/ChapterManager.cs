@@ -180,12 +180,13 @@ namespace Dev.Acadmy.Chapters
 
                         var nextQuiz = quizzes[index];
 
+
                         quizDto = new QuizInfoDto
                         {
                             QuizId = nextQuiz.Id,
                             Title = nextQuiz.Title,
                             QuestionsCount = nextQuiz.Questions.Count,
-                            QuizTryCount = l.QuizTryCount,
+                            QuizTryCount = l.QuizTryCount * l.Quizzes.Count,
                             TryedCount = lectureTry.MyTryCount,
                             AlreadyAnswer = answeredLectureIds.Contains(l.Id)
                         };

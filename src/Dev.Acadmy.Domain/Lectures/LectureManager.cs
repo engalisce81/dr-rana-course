@@ -157,7 +157,7 @@ namespace Dev.Acadmy.Lectures
 
         public async Task CreateQuizes(CreateUpdateLectureDto input , Guid lectureId)
         {
-            for (var i = 0; i < input.QuizCount; i++) await _quizManager.CreateAsync(new CreateUpdateQuizDto { CreaterId = _currentUser.GetId(), QuizTime = input.QuizTime, LectureId = lectureId,Title = input.Title+" " + "Quiz " + i, Description = input.Content });
+            for (var i = 0; i < input.QuizCount; i++) await _quizManager.CreateAsync(new CreateUpdateQuizDto {QuizTryCount=input.QuizTryCount, CreaterId = _currentUser.GetId(), QuizTime = input.QuizTime, LectureId = lectureId,Title = input.Title+" " + "Quiz " + i, Description = input.Content });
         }
         // here
         public async Task<ResponseApi<QuizDetailsDto>> GetQuizDetailsAsync(Guid quizId)
@@ -261,14 +261,14 @@ namespace Dev.Acadmy.Lectures
         }
 
 
-        public async Task<ResponseApi<int>> UserTryCount(Guid userId,Guid lecId ,Guid quizId)
+        public async Task<ResponseApi<LectureTryDto>> UserTryCount(Guid userId,Guid lecId ,Guid quizId)
         {
             var count = await _lectureTryRepository.CountAsync(x => x.UserId == userId && x.LectureId == lecId);
             var lecture = await _lectureRepository.GetAsync(lecId);
             var isSucces = await _lectureTryRepository.AnyAsync(x => x.UserId == userId && x.LectureId == lecId && x.IsSucces == true);
             var rate = await _quizStudentRepository.FirstOrDefaultAsync(x => x.UserId == userId && x.LectureId == lecId && x.QuizId == quizId);
             var lecturetry = new LectureTryDto { MyTryCount = count, LectureTryCount = lecture.QuizTryCount, IsSucces = isSucces, SuccessQuizRate = lecture.SuccessQuizRate ,MyScoreRate=rate?.Score??0};
-            return new ResponseApi<int> { Data = count ,Message="get count" ,Success =true};
+            return new ResponseApi<LectureTryDto >{ Data = lecturetry, Message="get count" ,Success =true};
         }
 
     }
