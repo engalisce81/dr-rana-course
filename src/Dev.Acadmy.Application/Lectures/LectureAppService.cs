@@ -41,7 +41,7 @@ namespace Dev.Acadmy.Lectures
         [Authorize]
         public async Task<ResponseApi<LectureQuizResultDto>> GetLectureQuizResultsAsync(Guid lectureId) => await _quizManager.GetLectureQuizResultsAsync(lectureId);
         [AllowAnonymous]
-        public async Task<ResponseApi<LectureTryDto>> UserTryCount(Guid userId, Guid lecId,Guid quizId) => await _lectureManager.UserTryCount(userId, lecId ,quizId);
+        public async Task<ResponseApi<LectureTryDto>> GetUserTryCount(Guid userId, Guid lecId,Guid quizId) => await _lectureManager.UserTryCount(userId, lecId ,quizId);
 
     }
 }
