@@ -13,7 +13,7 @@ namespace Dev.Acadmy.Exams
         public int Score { get; set; }
         public bool IsActive { get; set; }
         public Guid CourseId { get; set; }
-        public ICollection<Guid> QuestionBankIds { get; set; } = new List<Guid>();
-        public ICollection<Guid> QuestionIds { get; set; } = new List<Guid>();
+        //public ICollection<Guid> QuestionBankIds { get; set; } = new List<Guid>();
+      //  public ICollection<Guid> QuestionIds { get; set; } = new List<Guid>();
     }
 }

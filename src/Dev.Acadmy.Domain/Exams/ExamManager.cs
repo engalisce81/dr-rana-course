@@ -24,8 +24,10 @@ namespace Dev.Acadmy.Exams
         private readonly IIdentityUserRepository _userRepository;
         private readonly ICurrentUser _currentUser;
         private readonly IRepository<ExamQuestionBank, Guid> _examQuestionBankRepository;
-        public ExamManager(IRepository<ExamQuestionBank, Guid> examQuestionBankRepository, ICurrentUser currentUser , IIdentityUserRepository userRepository, IRepository<QuestionBank, Guid> questionBankRepository, IMapper mapper, IRepository<Exam,Guid> examRepository , IRepository<Question, Guid> questionRepository)
+        private readonly IRepository<ExamQuestion, Guid> _examQuestionRepository;
+        public ExamManager(IRepository<ExamQuestion, Guid> examQuestionRepository, IRepository<ExamQuestionBank, Guid> examQuestionBankRepository, ICurrentUser currentUser , IIdentityUserRepository userRepository, IRepository<QuestionBank, Guid> questionBankRepository, IMapper mapper, IRepository<Exam,Guid> examRepository , IRepository<Question, Guid> questionRepository)
         {
+            _examQuestionRepository = examQuestionRepository;
             _examQuestionBankRepository = examQuestionBankRepository;
             _currentUser = currentUser;
             _userRepository = userRepository;
@@ -35,62 +37,71 @@ namespace Dev.Acadmy.Exams
             _examRepository = examRepository;
         }
 
+        //public async Task<ResponseApi<ExamDto>> GetAsync(Guid id)
+        //{
+        //    // نجيب examQuestionBanks المرتبطة بالامتحان
+        //    var examQuestionBanks = await (await _examQuestionBankRepository.GetQueryableAsync())
+        //        .Where(x => x.ExamId == id)
+        //        .Include(x => x.Exam)
+        //        .Include(x => x.QuestionBank)
+        //            .ThenInclude(qb => qb.Questions)
+        //                .ThenInclude(q => q.QuestionAnswers)
+        //        .ToListAsync();
+
+        //    // لو مفيش حاجة
+        //    if (!examQuestionBanks.Any())
+        //        return new ResponseApi<ExamDto>
+        //        {
+        //            Success = false,
+        //            Message = "Exam not found",
+        //            Data = null
+        //        };
+
+        //    // ناخد أول exam كمرجع (كلهم لنفس الامتحان)
+        //    var examEntity = examQuestionBanks.First().Exam;
+
+        //    // نبني ExamDto واحد فقط
+        //    var dto = new ExamDto
+        //    {
+        //        Id = examEntity.Id,
+        //        Name = examEntity.Name,
+        //        TimeExam = examEntity.TimeExam,
+        //        IsActive = examEntity.IsActive,
+        //        ExamQuestions = examQuestionBanks
+        //            .SelectMany(eq => eq.QuestionBank.Questions)
+        //            .Select(q => new ExamQuestions
+        //            {
+        //                Id = q.Id,
+        //                Tittle = q.Title,
+        //                QuestionType = q.QuestionType.Name,
+        //                QuestionAnswers = q.QuestionAnswers.Select(qa => new ExamQuestionAnswer
+        //                {
+        //                    AnswerId = qa.Id,
+        //                    Answer = qa.Answer,
+        //                    IsSelected = qa.IsCorrect
+        //                }).ToList()
+        //            })
+        //            .ToList()
+        //    };
+
+        //    return new ResponseApi<ExamDto>
+        //    {
+        //        Data = dto,
+        //        Success = true,
+        //        Message = "Exam loaded successfully"
+        //    };
+        //}
+
+
         public async Task<ResponseApi<ExamDto>> GetAsync(Guid id)
         {
-            // نجيب examQuestionBanks المرتبطة بالامتحان
-            var examQuestionBanks = await (await _examQuestionBankRepository.GetQueryableAsync())
-                .Where(x => x.ExamId == id)
-                .Include(x => x.Exam)
-                .Include(x => x.QuestionBank)
-                    .ThenInclude(qb => qb.Questions)
-                        .ThenInclude(q => q.QuestionAnswers)
-                .ToListAsync();
-
-            // لو مفيش حاجة
-            if (!examQuestionBanks.Any())
-                return new ResponseApi<ExamDto>
-                {
-                    Success = false,
-                    Message = "Exam not found",
-                    Data = null
-                };
-
-            // ناخد أول exam كمرجع (كلهم لنفس الامتحان)
-            var examEntity = examQuestionBanks.First().Exam;
-
-            // نبني ExamDto واحد فقط
-            var dto = new ExamDto
-            {
-                Id = examEntity.Id,
-                Name = examEntity.Name,
-                TimeExam = examEntity.TimeExam,
-                IsActive = examEntity.IsActive,
-                ExamQuestions = examQuestionBanks
-                    .SelectMany(eq => eq.QuestionBank.Questions)
-                    .Select(q => new ExamQuestions
-                    {
-                        Id = q.Id,
-                        Tittle = q.Title,
-                        QuestionType = q.QuestionType.Name,
-                        QuestionAnswers = q.QuestionAnswers.Select(qa => new ExamQuestionAnswer
-                        {
-                            AnswerId = qa.Id,
-                            Answer = qa.Answer,
-                            IsSelected = qa.IsCorrect
-                        }).ToList()
-                    })
-                    .ToList()
-            };
-
-            return new ResponseApi<ExamDto>
-            {
-                Data = dto,
-                Success = true,
-                Message = "Exam loaded successfully"
-            };
+            var exam = await _examRepository.GetAsync(id);
+            if (exam == null) return new ResponseApi<ExamDto> { Data = null, Success = false, Message = "Not found exam" };
+            var dto = _mapper.Map<ExamDto>(exam);
+            return new ResponseApi<ExamDto> { Data = dto, Success = true, Message = "load succeess" };
         }
 
-        
+
         public async Task<PagedResultDto<ExamDto>> GetListAsync(int pageNumber, int pageSize, string? search)
         {
             var roles = await _userRepository.GetRolesAsync(_currentUser.GetId());
@@ -108,7 +119,7 @@ namespace Dev.Acadmy.Exams
         {
             var exam = _mapper.Map<Exam>(input);
             var result = await _examRepository.InsertAsync(exam, autoSave: true);
-            await CreateRelation(result, input);
+           // await CreateRelation(result, input);
             var dto = _mapper.Map<ExamDto>(result);
             return new ResponseApi<ExamDto> { Data = dto, Success = true, Message = "save succeess" };
         }
@@ -119,8 +130,8 @@ namespace Dev.Acadmy.Exams
             if (examDB == null) return new ResponseApi<ExamDto> { Data = null, Success = false, Message = "Not found exam" };
             var exam = _mapper.Map(input, examDB);
             var result = await _examRepository.UpdateAsync(exam);
-            await DeleteRelation(id);
-            await CreateRelation(result, input);
+           // await DeleteRelation(id);
+           // await CreateRelation(result, input);
             var dto = _mapper.Map<ExamDto>(result);
             return new ResponseApi<ExamDto> { Data = dto, Success = true, Message = "update succeess" };
         }
@@ -129,98 +140,87 @@ namespace Dev.Acadmy.Exams
         {
             var exam = await _examRepository.FirstOrDefaultAsync(x => x.Id == id);
             if (exam == null) return new ResponseApi<bool> { Data = false, Success = false, Message = "Not found exam" };
-            await DeleteRelation(id);
+         //   await DeleteRelation(id);
             await _examRepository.DeleteAsync(exam);
             return new ResponseApi<bool> { Data = true, Success = true, Message = "delete succeess" };
         }
 
-        public async Task DeleteRelation(Guid examId)
+
+        public async Task<PagedResultDto<ExamQuestionsDto>> GetQuestionsFromBankAsync(List<Guid> bankIds, Guid examId)
         {
-            var examQuestionBanks = await _examQuestionBankRepository.GetListAsync(x => x.ExamId == examId);
-            var questions = await _questionRepository.GetListAsync(x => x.ExamId == examId);
-            foreach (var question in questions) question.ExamId = null;
-            await _examQuestionBankRepository.DeleteManyAsync(examQuestionBanks, autoSave: true);
-            await _questionRepository.UpdateManyAsync(questions, autoSave: true);
+            // ✅ تحميل بنوك الأسئلة مع الأسئلة والإجابات وأنواع الأسئلة
+            var banksQuery = await _questionBankRepository.GetQueryableAsync();
+            var banks = await banksQuery
+                .Where(x => bankIds.Contains(x.Id))
+                .Include(x => x.Questions)
+                    .ThenInclude(q => q.QuestionType)
+                .Include(x => x.Questions)
+                    .ThenInclude(q => q.QuestionAnswers)
+                .ToListAsync();
+
+            var questions = new List<ExamQuestionsDto>();
+
+            // ✅ تحميل الأسئلة المرتبطة بالامتحان مرة واحدة (بدلاً من استعلام داخل اللوب)
+            var examQuestionIds = await (await _examQuestionRepository.GetQueryableAsync())
+                .Where(x => x.ExamId == examId)
+                .Select(x => x.QuestionId)
+                .ToListAsync();
+
+            foreach (var bank in banks)
+            {
+                foreach (var question in bank.Questions)
+                {
+                    var examQuestion = new ExamQuestionsDto
+                    {
+                        Id = question.Id,
+                        Tittle = question.Title,
+                        QuestionType = question.QuestionType?.Name,
+                        // ✅ التأكد إذا كانت السؤال مرتبط بالامتحان
+                        IsSelected = examQuestionIds.Contains(question.Id),
+                        QuestionAnswers = question.QuestionAnswers.Select(qa => new ExamQuestionAnswerDto
+                        {
+                            AnswerId = qa.Id,
+                            Answer = qa.Answer,
+                            IsSelected = qa.IsCorrect
+                        }).ToList()
+                    };
+
+                    questions.Add(examQuestion);
+                }
+            }
+
+            // ✅ ترجيع النتيجة داخل PagedResultDto (بدون pagination حالياً، يمكنك إضافته لاحقاً)
+            return new PagedResultDto<ExamQuestionsDto>(questions.Count, questions);
         }
 
-        public async Task CreateRelation(Exam result , CreateUpdateExamDto input)
+        public async Task AddQuestionToExam(CreateUpdateExamQuestionDto input)
         {
-            foreach (var questionBankId in input.QuestionBankIds)
+            var examBanks = await (await _examQuestionBankRepository.GetQueryableAsync()).Where(x => input.QuestionBankIds.Contains(x.QuestionBankId) && x.ExamId == input.ExamId).ToListAsync();
+            var examQuestions = await (await _examQuestionRepository.GetQueryableAsync()).Where(x => input.QuestionIds.Contains(x.QuestionId) && x.ExamId == input.ExamId).ToListAsync();
+            if (examBanks.Any()) await _examQuestionBankRepository.DeleteManyAsync(examBanks);
+            if (examQuestions.Any()) await _examQuestionRepository.DeleteManyAsync(examQuestions);
+            foreach (var bankId in input.QuestionBankIds)
             {
                 var examQuestionBank = new ExamQuestionBank
                 {
-                    ExamId = result.Id,
-                    QuestionBankId = questionBankId
+                    ExamId = input.ExamId,
+                    QuestionBankId = bankId
                 };
-                await _examQuestionBankRepository.InsertAsync(examQuestionBank, autoSave: true);
+                await _examQuestionBankRepository.InsertAsync(examQuestionBank ,autoSave:true);
             }
-
             foreach (var questionId in input.QuestionIds)
             {
-                var question = await _questionRepository.FirstOrDefaultAsync(x => x.Id == questionId);
-                if (question != null)
+                var examQuestion = new ExamQuestion
                 {
-                    question.ExamId = result.Id;
-                    await _questionRepository.UpdateAsync(question, autoSave: true);
-                }
+                    ExamId = input.ExamId,
+                    QuestionId = questionId
+                };
+                await _examQuestionRepository.InsertAsync(examQuestion ,autoSave:true);
             }
         }
+        
 
-        //public async Task<ExamDto> GetAsync(Guid examId ,Guid examId)
-        //{
-        //    var exam =await (await _examRepository.GetQueryableAsync()).Include(x => x.Questions).FirstOrDefaultAsync(x => x.Id == examId);
-        //    if (exam == null) throw new Exception("Question Bank not found");
-        //    var exam = await _examRepository.GetAsync(examId);
-        //    if (exam == null) throw new Exception("Exam not found");
-        //    var examDto =new ExamDto
-        //    {
-        //        Id = examId,
-        //        Name = exam.Name,
-        //        TimeExam = exam.TimeExam,
-        //        IsActive = exam.IsActive,
-        //    };
-        //    foreach (var question in exam.Questions)
-        //    {
-        //        if (question.ExamId == examId) examDto.ExamQuestions.Add(new ExamQuestions { Id = question.Id,Tittle = question.Title ,IsSelected = true });
-        //        else examDto.ExamQuestions.Add(new ExamQuestions { Id = question.Id, Tittle = question.Title, IsSelected = false });
-        //    }
-        //    return examDto;
-        //}
-
-        //public async Task UpdateExam(Guid id, CreateUpdateExamDto input)
-        //{
-        //    var exam = await _examRepository.GetAsync(id);
-
-        //    // تحديث بيانات الامتحان
-        //    exam.Name = input.Name;
-        //    exam.TimeExam = input.TimeExam;
-        //    exam.IsActive = input.IsActive;
-
-        //    // 🟢 جلب جميع الأسئلة التابعة للامتحان الحالي
-        //    var allQuestions = await _questionRepository.GetListAsync();
-
-        //    var examQuestions = allQuestions.Where(q => q.ExamId == id).ToList();
-
-        //    // 🟠 إزالة الأسئلة اللي اتشالت
-        //    foreach (var oldQuestion in examQuestions.Where(q => !input.QuestionIds.Contains(q.Id)))
-        //    {
-        //        oldQuestion.ExamId = null;
-        //    }
-
-        //    // 🟢 إضافة الأسئلة الجديدة
-        //    foreach (var questionId in input.QuestionIds)
-        //    {
-        //        var question = allQuestions.FirstOrDefault(q => q.Id == questionId);
-        //        if (question != null)
-        //            question.ExamId = id;
-        //    }
-
-        //    // ✅ تحديث جميع الأسئلة مرة واحدة (بدون autoSave لكل واحدة)
-        //    await _questionRepository.UpdateManyAsync(allQuestions, autoSave: true);
-
-        //    // ✅ حفظ التغييرات على الامتحان
-        //    await _examRepository.UpdateAsync(exam, autoSave: true);
-        //}
-
+        
+        
     }
 }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Dev.Acadmy.Exams
 {
-    public class ExamQuestionAnswer
+    public class ExamQuestionAnswerDto
     {
         public Guid AnswerId { get; set; }
         public string Answer {  get; set; }

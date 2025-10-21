@@ -13,7 +13,6 @@ namespace Dev.Acadmy.Questions
         public Guid QuestionTypeId { get; set; }
         public Guid QuizId { get; set; }
         public Guid QuestionBankId { get; set; }
-        public Guid? ExamId { get; set; }
         public int Score { get; set; }
         [ForeignKey(nameof(QuizId))]
         public Quiz Quiz { get; set;}
@@ -21,7 +20,6 @@ namespace Dev.Acadmy.Questions
         public QuestionType QuestionType { get; set; }
         [ForeignKey(nameof(QuestionBankId))]
         public QuestionBank QuestionBank { get; set; }
-        public Exam? Exam { get; set; }
         public ICollection<QuestionAnswer> QuestionAnswers { get; set; }=new List<QuestionAnswer>();
     }
 }

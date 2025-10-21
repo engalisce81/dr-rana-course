@@ -23,6 +23,16 @@ public static class AcadmyPermissions
         public const string View = Default + ".View";
         public const string Publish = Default + ".Publish";
     }
+    
+    public static class Exams
+    {
+        public const string Default = GroupName + ".Exams";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+        public const string View = Default + ".View";
+        public const string Publish = Default + ".Publish";
+    }
     public static class Teachers
     {
         public const string Default = GroupName + ".Teachers";

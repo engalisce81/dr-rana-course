@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 
 namespace Dev.Acadmy.Exams
 {
-    public class ExamQuestions
+    public class ExamQuestionsDto
     {
         public Guid Id { get; set; }    
         public string Tittle { get; set; }
         public string QuestionType { get; set; }
         public bool IsSelected { get; set; }
-        public ICollection<ExamQuestionAnswer> QuestionAnswers { get; set; } = new List<ExamQuestionAnswer>();
+        public ICollection<ExamQuestionAnswerDto> QuestionAnswers { get; set; } = new List<ExamQuestionAnswerDto>();
     }
 }

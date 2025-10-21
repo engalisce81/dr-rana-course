@@ -88,7 +88,8 @@ public class AcadmyDbContext :
     public DbSet<Exam> Exams { get; set; }
     public DbSet<ExamQuestionBank> ExamQuestionBanks { get; set; }
     public DbSet<QuizStudentAnswer> QuizStudentAnswer { get; set; }
-    public DbSet<Support> Supports { get; set; }    
+    public DbSet<Support> Supports { get; set; }   
+    public DbSet<ExamQuestion> ExamQuestions { get; set; }
 
     public AcadmyDbContext(DbContextOptions<AcadmyDbContext> options)
         : base(options)

@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Dev.Acadmy.Chapters;
 using Dev.Acadmy.Courses;
+using Dev.Acadmy.Exams;
 using Dev.Acadmy.Lectures;
 using Dev.Acadmy.LookUp;
 using Dev.Acadmy.MediaItems;
@@ -79,6 +80,9 @@ public class AcadmyApplicationAutoMapperProfile : Profile
 
         CreateMap<Support, SupportDto>();
         CreateMap<CreateUpdateSupportDto , Support>();
+
+        CreateMap<Exam, ExamDto>();
+        CreateMap<CreateUpdateExamDto, Exam>();
 
         CreateMap<LookupDto, QuestionBank>().ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name)); ;
         CreateMap<LookupDto, QuestionType>().ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name));
