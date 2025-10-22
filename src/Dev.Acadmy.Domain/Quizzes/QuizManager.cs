@@ -232,7 +232,6 @@ namespace Dev.Acadmy.Quizzes
         {
             var userId = _currentUser.GetId();
 
-            // نحمل المحاضرة بالكويزات التابعة لها
             var lecture = await (await _lectureRepository.GetQueryableAsync())
                 .Include(l => l.Quizzes)
                     .ThenInclude(q => q.Questions)
@@ -242,7 +241,6 @@ namespace Dev.Acadmy.Quizzes
             if (lecture == null)
                 throw new UserFriendlyException("Lecture not found");
 
-            // نحمل نتائج الطالب في الكويزات دي
             var quizStudents = await (await _quizStudentRepository.GetQueryableAsync())
                 .Include(qs => qs.Answers)
                 .Where(qs => qs.UserId == userId && qs.LectureId == lectureId)
@@ -251,13 +249,13 @@ namespace Dev.Acadmy.Quizzes
             var lectureResult = new LectureQuizResultDto
             {
                 LectureId = lecture.Id,
-                LectureTitle = lecture.Title, // أو Title حسب الموديل
+                LectureTitle = lecture.Title
             };
 
             foreach (var quiz in lecture.Quizzes)
             {
                 var quizStudent = quizStudents.FirstOrDefault(x => x.QuizId == quiz.Id);
-                if (quizStudent == null) continue; // الطالب لسه ما حلش الكويز ده
+                if (quizStudent == null) continue;
 
                 double totalScore = quiz.Questions.Sum(q => q.Score);
 
@@ -273,26 +271,27 @@ namespace Dev.Acadmy.Quizzes
                 {
                     var studentAnswer = quizStudent.Answers.FirstOrDefault(a => a.QuestionId == question.Id);
 
-                    var correctAnswer = question.QuestionAnswers.FirstOrDefault(a => a.IsCorrect);
-                    string correctAnswerText = correctAnswer?.Answer;
-
-                    string studentAnswerText = studentAnswer?.TextAnswer;
-                    if (studentAnswer?.SelectedAnswerId != null)
-                    {
-                        var selected = question.QuestionAnswers.FirstOrDefault(a => a.Id == studentAnswer.SelectedAnswerId);
-                        studentAnswerText = selected?.Answer;
-                    }
-
-                    quizResult.Questions.Add(new QuestionResultDto
+                    var questionResult = new QuestionResultDto
                     {
                         QuestionId = question.Id,
-                        QuestionText = question.Title, // أو Text حسب الموديل
-                        StudentAnswer = studentAnswerText,
-                        CorrectAnswer = correctAnswerText,
-                        IsCorrect = studentAnswer?.IsCorrect ?? false,
+                        QuestionText = question.Title,
                         ScoreObtained = studentAnswer?.ScoreObtained ?? 0,
                         ScoreTotal = question.Score
-                    });
+                    };
+
+                    // نضيف كل الإجابات الخاصة بالسؤال
+                    foreach (var answer in question.QuestionAnswers)
+                    {
+                        questionResult.Answers.Add(new AnswerResultDto
+                        {
+                            AnswerId = answer.Id,
+                            AnswerText = answer.Answer,
+                            IsCorrect = answer.IsCorrect,
+                            IsSelected = studentAnswer?.SelectedAnswerId == answer.Id
+                        });
+                    }
+
+                    quizResult.Questions.Add(questionResult);
                 }
 
                 lectureResult.Quizzes.Add(quizResult);

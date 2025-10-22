@@ -26,11 +26,17 @@ namespace Dev.Acadmy.Quizzes
     {
         public Guid QuestionId { get; set; }
         public string QuestionText { get; set; }
-        public string? StudentAnswer { get; set; }
-        public string? CorrectAnswer { get; set; }
-        public bool IsCorrect { get; set; }
         public double ScoreObtained { get; set; }
         public double ScoreTotal { get; set; }
+        public List<AnswerResultDto> Answers { get; set; } = new();
+    }
+
+    public class AnswerResultDto
+    {
+        public Guid AnswerId { get; set; }
+        public string AnswerText { get; set; }
+        public bool IsCorrect { get; set; }
+        public bool IsSelected { get; set; }
     }
 
 }
