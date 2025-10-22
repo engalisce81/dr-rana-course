@@ -268,12 +268,12 @@ namespace Dev.Acadmy.Lectures
             var lecture = await (await _lectureRepository.GetQueryableAsync()).Include(x=>x.Quizzes).FirstOrDefaultAsync(x=>x.Id == lecId);
             var isSucces = await _lectureTryRepository.AnyAsync(x => x.UserId == userId && x.LectureId == lecId && x.IsSucces == true);
             var quizStudent = await (await _quizStudentRepository.GetQueryableAsync()).FirstOrDefaultAsync(x => x.UserId == userId && x.LectureId == lecId && x.QuizId == quizId);
-            var myScoreRate = lecture.SuccessQuizRate > 0 && quizStudent != null
+            var myScoreRate = lecture?.SuccessQuizRate > 0 && quizStudent != null
     ? Math.Round(((double)quizStudent.Score / (double)lecture.SuccessQuizRate) * 100, 2)
     : 0;
 
 
-            var lecturetry = new LectureTryDto { MyTryCount = trys.MyTryCount, LectureTryCount = lecture.QuizTryCount * lecture.Quizzes.Count, IsSucces = isSucces, SuccessQuizRate = lecture.SuccessQuizRate ,MyScoreRate= myScoreRate };
+            var lecturetry = new LectureTryDto { MyTryCount = trys?.MyTryCount??0, LectureTryCount = lecture?.QuizTryCount??0 * lecture?.Quizzes?.Count??0, IsSucces = isSucces, SuccessQuizRate = lecture?.SuccessQuizRate??0 ,MyScoreRate= myScoreRate };
             return new ResponseApi<LectureTryDto>{ Data = lecturetry, Message="get count" ,Success =true};
         }
 

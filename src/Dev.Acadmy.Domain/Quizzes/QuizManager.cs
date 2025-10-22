@@ -27,8 +27,10 @@ namespace Dev.Acadmy.Quizzes
         private readonly IRepository<Lecture, Guid> _lectureRepository;
         private readonly IRepository<QuizStudentAnswer, Guid> _quizStudentAnswerRepository;
         private readonly IRepository<LectureTry, Guid> _lectureTryRepository;
-        public QuizManager(IRepository<LectureTry, Guid> lectureTryRepository, IRepository<QuizStudentAnswer, Guid> quizStudentAnswerRepository, IRepository<Lecture, Guid> lectureRepository, IRepository<LectureStudent, Guid> lectureStudentRepository, IIdentityUserRepository userRepository, ICurrentUser currentUser, IRepository<QuizStudent> quizStudentRepository, IMapper mapper, IRepository<Quiz,Guid> quizRepository)
+        private readonly LectureManager _lectureManager;
+        public QuizManager(LectureManager lectureManager, IRepository<LectureTry, Guid> lectureTryRepository, IRepository<QuizStudentAnswer, Guid> quizStudentAnswerRepository, IRepository<Lecture, Guid> lectureRepository, IRepository<LectureStudent, Guid> lectureStudentRepository, IIdentityUserRepository userRepository, ICurrentUser currentUser, IRepository<QuizStudent> quizStudentRepository, IMapper mapper, IRepository<Quiz,Guid> quizRepository)
         {
+            _lectureManager = lectureManager;
             _lectureTryRepository = lectureTryRepository;
             _quizStudentAnswerRepository = quizStudentAnswerRepository;
             _lectureRepository = lectureRepository;
@@ -810,6 +812,7 @@ namespace Dev.Acadmy.Quizzes
     lectureTry.IsSucces = totalScore > 0 && (studentScore / totalScore) >= requiredRate;
 
     await _lectureTryRepository.UpdateAsync(lectureTry, autoSave: true);
+            var userTryCount = await _lectureManager.UserTryCount(userId, lecture.Id, input.QuizId);
 
     return new ResponseApi<QuizResultDto>
     {
@@ -817,7 +820,10 @@ namespace Dev.Acadmy.Quizzes
         {
             QuizId = quiz.Id,
             TotalScore = totalScore,
-            StudentScore = studentScore
+            StudentScore = userTryCount?.Data?.MyScoreRate ?? 0 ,
+            MyTryCount = userTryCount?.Data?.MyTryCount??0,
+            LectureTryCount = userTryCount?.Data?.LectureTryCount?? 0,
+            IsSuccesful=userTryCount?.Data?.IsSucces??false,
         },
         Success = true,
         Message = "Quiz submitted and updated successfully"
