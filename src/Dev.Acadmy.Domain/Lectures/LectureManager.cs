@@ -235,6 +235,7 @@ namespace Dev.Acadmy.Lectures
                 {
                     Id = q.Id,
                     Title = q.Title,
+                    LogoUrl = (_mediaItemManager.GetAsync(q.Id).Result)?.Url?? string.Empty,
                     Questions = q.Questions.Select(ques => new QuestionWithAnswersDto
                     {
                         Id = ques.Id,

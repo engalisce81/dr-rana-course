@@ -17,6 +17,7 @@ namespace Dev.Acadmy.Questions
         public Guid QuestionBankId { get; set; }
         public string QuestionBankName { get; set; }
         public int Score { get; set; }
+        public string LogoUrl { get; set; } 
         public ICollection<QuestionAnswerDto> Answers { get; set; }= new List<QuestionAnswerDto>();
     }
 }

@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Dev.Acadmy.LookUp;
+using Dev.Acadmy.MediaItems;
 using Dev.Acadmy.Quizzes;
 using Dev.Acadmy.Response;
 using Microsoft.EntityFrameworkCore;
@@ -25,9 +26,11 @@ namespace Dev.Acadmy.Questions
         private readonly IIdentityUserRepository _userRepository;
         private readonly IRepository<Quiz,Guid> _quizRepository;
         private readonly QuestionAnswerManager _quetionAnswerManager;
+        private readonly MediaItemManager _mediaItemManager;    
         
-        public QuestionManager(QuestionAnswerManager quetionAnswerManager, IRepository<Quiz, Guid> quizRepository, IIdentityUserRepository userRepository, ICurrentUser currentUser, IRepository<QuestionBank> questionbankRepository, IRepository<QuestionType> questionTypeRepository, IMapper mapper, IRepository<Question> questionRepository)
+        public QuestionManager(MediaItemManager mediaItemManager, QuestionAnswerManager quetionAnswerManager, IRepository<Quiz, Guid> quizRepository, IIdentityUserRepository userRepository, ICurrentUser currentUser, IRepository<QuestionBank> questionbankRepository, IRepository<QuestionType> questionTypeRepository, IMapper mapper, IRepository<Question> questionRepository)
         {
+            _mediaItemManager = mediaItemManager;
             _quetionAnswerManager = quetionAnswerManager;
             _quizRepository=quizRepository;
             _userRepository = userRepository;
@@ -43,8 +46,10 @@ namespace Dev.Acadmy.Questions
             var question =await ( await _questionRepository.GetQueryableAsync()).Include(x=>x.QuestionAnswers).FirstOrDefaultAsync(x => x.Id == id);
             if (question == null) return new ResponseApi<QuestionDto> { Data = null, Success = false, Message = "Not found Question" };
             var dto = _mapper.Map<QuestionDto>(question);
+            var mediatItem = await _mediaItemManager.GetAsync(id);
             var questionAnswerDtos = _mapper.Map<List<QuestionAnswerDto>>(question.QuestionAnswers);
             dto.Answers = questionAnswerDtos;
+            dto.LogoUrl = mediatItem?.Url?? string.Empty;
             return new ResponseApi<QuestionDto> { Data = dto, Success = true, Message = "find succeess" };
         }
 
@@ -65,12 +70,14 @@ namespace Dev.Acadmy.Questions
         {
             var Question = _mapper.Map<Question>(input);
             var result = await _questionRepository.InsertAsync(Question);
+            var mediaItem =  await _mediaItemManager.CreateAsync(new CreateUpdateMediaItemDto{RefId = result.Id,Url = input.LogoUrl,IsImage=true});
             foreach (var questionAnswer in input.Answers)
             {
                 questionAnswer.QuestionId = result.Id;
                 await _quetionAnswerManager.CreateAsync(questionAnswer);
             }
             var dto = _mapper.Map<QuestionDto>(result);
+            dto.LogoUrl = input.LogoUrl;
             return new ResponseApi<QuestionDto> { Data = dto, Success = true, Message = "save succeess" };
         }
 
@@ -80,6 +87,8 @@ namespace Dev.Acadmy.Questions
             if (QuestionDB == null) return new ResponseApi<QuestionDto> { Data = null, Success = false, Message = "Not found Question" };
             var Question = _mapper.Map(input, QuestionDB);
             var result = await _questionRepository.UpdateAsync(Question);
+            var mediaItem = await _mediaItemManager.UpdateAsync(id,new CreateUpdateMediaItemDto { RefId = result.Id, Url = input.LogoUrl, IsImage = true });
+
             await _quetionAnswerManager.DeleteByQuestionId(id);
             foreach (var questionAnswer in input.Answers) 
             {

@@ -11,6 +11,7 @@ namespace Dev.Acadmy.Quizzes
     {
         public Guid Id { get; set; }
         public string Title { get; set; }
+        public string LogoUrl { get; set; }
         public List<QuestionWithAnswersDto> Questions { get; set; } = new();
     }
 }
