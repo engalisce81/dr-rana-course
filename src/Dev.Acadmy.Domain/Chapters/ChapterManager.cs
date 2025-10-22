@@ -185,14 +185,15 @@ namespace Dev.Acadmy.Chapters
                         }
 
                         var nextQuiz = quizzes[currentQuizIndex];
-
+                        var trys = await _lectureManger.UserTryCount(userId,l.Id, nextQuiz.Id);   
                         quizDto = new QuizInfoDto
                         {
                             QuizId = nextQuiz.Id,
                             Title = nextQuiz.Title,
                             QuestionsCount = nextQuiz.Questions.Count,
-                            QuizTryCount = l.QuizTryCount*l.Quizzes.Count,
-                            TryedCount = userQuizAttempts.FirstOrDefault(q => q.QuizId == nextQuiz.Id)?.TryCount ?? 0,
+                            QuizTryCount = trys?.Data?.LectureTryCount??0,
+                            TryedCount = trys?.Data?.MyTryCount??0,
+                            IsSucces = trys?.Data?.IsSucces?? false,
                             AlreadyAnswer = userQuizAttempts.Any(q => q.LectureId == l.Id)
                         };
                     }
