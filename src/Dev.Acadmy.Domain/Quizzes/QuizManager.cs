@@ -142,6 +142,7 @@ namespace Dev.Acadmy.Quizzes
                     QuizId = quiz.Id,
                     QuizTitle = quiz.Title,
                     StudentScore = quizStudent.Score,
+                    QuizSuccesRate = lecture.SuccessQuizRate,
                     TotalScore = totalScore,
                 };
 

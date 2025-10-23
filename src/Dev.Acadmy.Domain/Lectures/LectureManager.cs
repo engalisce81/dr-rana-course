@@ -112,7 +112,7 @@ namespace Dev.Acadmy.Lectures
                     IsVisible = l.IsVisible,
                     QuizCount = l.Quizzes.Count(),
                     QuizTime = l?.Quizzes?.FirstOrDefault()?.QuizTime ?? 0,
-                    QuizTryCount = l?.QuizTryCount?? 0
+                    QuizTryCount = (l?.QuizTryCount*l?.Quizzes?.Count())?? 0
                 };
 
                 var lecPdfs = await _mediaItemManager.GetListAsync(l.Id);

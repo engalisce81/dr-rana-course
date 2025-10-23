@@ -19,6 +19,7 @@ namespace Dev.Acadmy.Quizzes
         public string QuizTitle { get; set; }
         public double StudentScore { get; set; }
         public double TotalScore { get; set; }
+        public int QuizSuccesRate { get; set; }
         public List<QuestionResultDto> Questions { get; set; } = new();
     }
 
