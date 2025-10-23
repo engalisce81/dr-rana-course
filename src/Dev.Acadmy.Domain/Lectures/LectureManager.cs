@@ -192,6 +192,7 @@ namespace Dev.Acadmy.Lectures
                     QuestionId = q.Id,
                     Title = q.Title,
                     Score = q.Score,
+                    LogoUrl =_mediaItemManager.GetAsync(q.Id).Result?.Url ?? string.Empty,
                     QuestionType = q.QuestionType?.Name ?? "",
                     QuestionTypeKey = q.QuestionType?.Key ?? 0, // إضافة الـ Key
 
@@ -235,7 +236,6 @@ namespace Dev.Acadmy.Lectures
                 {
                     Id = q.Id,
                     Title = q.Title,
-                    LogoUrl = (_mediaItemManager.GetAsync(q.Id).Result)?.Url?? string.Empty,
                     Questions = q.Questions.Select(ques => new QuestionWithAnswersDto
                     {
                         Id = ques.Id,
