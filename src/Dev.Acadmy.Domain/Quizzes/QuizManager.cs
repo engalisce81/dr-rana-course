@@ -14,6 +14,7 @@ using Volo.Abp.Identity;
 using static Dev.Acadmy.Permissions.AcadmyPermissions;
 using Dev.Acadmy.Lectures;
 using Dev.Acadmy.MediaItems;
+using Dev.Acadmy.Questions;
 
 namespace Dev.Acadmy.Quizzes
 {
@@ -29,8 +30,10 @@ namespace Dev.Acadmy.Quizzes
         private readonly IRepository<QuizStudentAnswer, Guid> _quizStudentAnswerRepository;
         private readonly IRepository<LectureTry, Guid> _lectureTryRepository;
         private readonly MediaItemManager _mediaitemManager;
-        public QuizManager(MediaItemManager mediaitemManager, IRepository<LectureTry, Guid> lectureTryRepository, IRepository<QuizStudentAnswer, Guid> quizStudentAnswerRepository, IRepository<Lecture, Guid> lectureRepository, IRepository<LectureStudent, Guid> lectureStudentRepository, IIdentityUserRepository userRepository, ICurrentUser currentUser, IRepository<QuizStudent> quizStudentRepository, IMapper mapper, IRepository<Quiz,Guid> quizRepository)
+        private readonly IRepository<Question, Guid> _questionRepository;
+        public QuizManager(IRepository<Question, Guid> questionRepository, MediaItemManager mediaitemManager, IRepository<LectureTry, Guid> lectureTryRepository, IRepository<QuizStudentAnswer, Guid> quizStudentAnswerRepository, IRepository<Lecture, Guid> lectureRepository, IRepository<LectureStudent, Guid> lectureStudentRepository, IIdentityUserRepository userRepository, ICurrentUser currentUser, IRepository<QuizStudent> quizStudentRepository, IMapper mapper, IRepository<Quiz,Guid> quizRepository)
         {
+            _questionRepository = questionRepository;
             _mediaitemManager = mediaitemManager;   
             _lectureTryRepository = lectureTryRepository;
             _quizStudentAnswerRepository = quizStudentAnswerRepository;
@@ -505,11 +508,10 @@ namespace Dev.Acadmy.Quizzes
             var lecture = await (await _lectureRepository.GetQueryableAsync()).Include(x => x.Quizzes).FirstOrDefaultAsync(x => x.Id == lecId);
             var isSucces = await _lectureTryRepository.AnyAsync(x => x.UserId == userId && x.LectureId == lecId && x.IsSucces == true);
             var quizStudent = await (await _quizStudentRepository.GetQueryableAsync()).FirstOrDefaultAsync(x => x.UserId == userId && x.LectureId == lecId && x.QuizId == quizId);
-            var myScoreRate = lecture?.SuccessQuizRate > 0 && quizStudent != null
-    ? Math.Round(((double)quizStudent.Score / (double)lecture.SuccessQuizRate) * 100, 2)
-    : 0;
-
-
+            var totalScore = await (await _questionRepository.GetQueryableAsync())
+                .Where(x => x.QuizId == quizId)
+                .SumAsync(x => (double?)x.Score) ?? 0;
+            var myScoreRate = lecture?.SuccessQuizRate > 0 && quizStudent != null ? Math.Round(((double)quizStudent.Score / (double)totalScore) * 100, 2) : 0;
             var lecturetry = new LectureTryDto { MyTryCount = trys?.MyTryCount ?? 0, LectureTryCount = lecture?.QuizTryCount ?? 0 * lecture?.Quizzes?.Count ?? 0, IsSucces = isSucces, SuccessQuizRate = lecture?.SuccessQuizRate ?? 0, MyScoreRate = myScoreRate };
             return new ResponseApi<LectureTryDto> { Data = lecturetry, Message = "get count", Success = true };
         }
