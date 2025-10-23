@@ -242,7 +242,8 @@ namespace Dev.Acadmy.Lectures
                         Title = ques.Title,
                         Score = ques.Score,
                         QuestionTypeId = ques.QuestionTypeId,           
-                        QuestionTypeName = ques.QuestionType?.Name?? "",     
+                        QuestionTypeName = ques.QuestionType?.Name?? "",
+                        LogoUrl = _mediaItemManager.GetAsync(ques.Id).Result?.Url ?? string.Empty,
                         Answers = ques.QuestionAnswers.Select(ans => new QuestionAnswerPanelDto
                         {
                             Id = ans.Id,

@@ -13,6 +13,7 @@ namespace Dev.Acadmy.Questions
         public int Score { get; set; }
         public Guid QuestionTypeId { get; set; }   
         public string QuestionTypeName { get; set; } 
+        public string LogoUrl { get; set; }
         public List<QuestionAnswerPanelDto> Answers { get; set; } = new();
     }
 }
