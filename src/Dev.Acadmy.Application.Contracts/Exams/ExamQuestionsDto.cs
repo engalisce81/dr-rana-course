@@ -11,6 +11,7 @@ namespace Dev.Acadmy.Exams
         public Guid Id { get; set; }    
         public string Tittle { get; set; }
         public string QuestionType { get; set; }
+        public string logoUrl { get; set; }
         public bool IsSelected { get; set; }
         public ICollection<ExamQuestionAnswerDto> QuestionAnswers { get; set; } = new List<ExamQuestionAnswerDto>();
     }

@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Dev.Acadmy.MediaItems;
 using Dev.Acadmy.Questions;
 using Dev.Acadmy.Response;
 using Microsoft.EntityFrameworkCore;
@@ -25,8 +26,10 @@ namespace Dev.Acadmy.Exams
         private readonly ICurrentUser _currentUser;
         private readonly IRepository<ExamQuestionBank, Guid> _examQuestionBankRepository;
         private readonly IRepository<ExamQuestion, Guid> _examQuestionRepository;
-        public ExamManager(IRepository<ExamQuestion, Guid> examQuestionRepository, IRepository<ExamQuestionBank, Guid> examQuestionBankRepository, ICurrentUser currentUser , IIdentityUserRepository userRepository, IRepository<QuestionBank, Guid> questionBankRepository, IMapper mapper, IRepository<Exam,Guid> examRepository , IRepository<Question, Guid> questionRepository)
+        private readonly MediaItemManager _mediaItemManager;
+        public ExamManager(MediaItemManager mediaItemManager, IRepository<ExamQuestion, Guid> examQuestionRepository, IRepository<ExamQuestionBank, Guid> examQuestionBankRepository, ICurrentUser currentUser , IIdentityUserRepository userRepository, IRepository<QuestionBank, Guid> questionBankRepository, IMapper mapper, IRepository<Exam,Guid> examRepository , IRepository<Question, Guid> questionRepository)
         {
+            _mediaItemManager = mediaItemManager;
             _examQuestionRepository = examQuestionRepository;
             _examQuestionBankRepository = examQuestionBankRepository;
             _currentUser = currentUser;
@@ -37,61 +40,7 @@ namespace Dev.Acadmy.Exams
             _examRepository = examRepository;
         }
 
-        //public async Task<ResponseApi<ExamDto>> GetAsync(Guid id)
-        //{
-        //    // نجيب examQuestionBanks المرتبطة بالامتحان
-        //    var examQuestionBanks = await (await _examQuestionBankRepository.GetQueryableAsync())
-        //        .Where(x => x.ExamId == id)
-        //        .Include(x => x.Exam)
-        //        .Include(x => x.QuestionBank)
-        //            .ThenInclude(qb => qb.Questions)
-        //                .ThenInclude(q => q.QuestionAnswers)
-        //        .ToListAsync();
-
-        //    // لو مفيش حاجة
-        //    if (!examQuestionBanks.Any())
-        //        return new ResponseApi<ExamDto>
-        //        {
-        //            Success = false,
-        //            Message = "Exam not found",
-        //            Data = null
-        //        };
-
-        //    // ناخد أول exam كمرجع (كلهم لنفس الامتحان)
-        //    var examEntity = examQuestionBanks.First().Exam;
-
-        //    // نبني ExamDto واحد فقط
-        //    var dto = new ExamDto
-        //    {
-        //        Id = examEntity.Id,
-        //        Name = examEntity.Name,
-        //        TimeExam = examEntity.TimeExam,
-        //        IsActive = examEntity.IsActive,
-        //        ExamQuestions = examQuestionBanks
-        //            .SelectMany(eq => eq.QuestionBank.Questions)
-        //            .Select(q => new ExamQuestions
-        //            {
-        //                Id = q.Id,
-        //                Tittle = q.Title,
-        //                QuestionType = q.QuestionType.Name,
-        //                QuestionAnswers = q.QuestionAnswers.Select(qa => new ExamQuestionAnswer
-        //                {
-        //                    AnswerId = qa.Id,
-        //                    Answer = qa.Answer,
-        //                    IsSelected = qa.IsCorrect
-        //                }).ToList()
-        //            })
-        //            .ToList()
-        //    };
-
-        //    return new ResponseApi<ExamDto>
-        //    {
-        //        Data = dto,
-        //        Success = true,
-        //        Message = "Exam loaded successfully"
-        //    };
-        //}
-
+      
 
         public async Task<ResponseApi<ExamDto>> GetAsync(Guid id)
         {
@@ -174,7 +123,8 @@ namespace Dev.Acadmy.Exams
                     {
                         Id = question.Id,
                         Tittle = question.Title,
-                        QuestionType = question.QuestionType?.Name,
+                        QuestionType = question?.QuestionType?.Name??string.Empty,
+                        logoUrl = _mediaItemManager.GetAsync(question.Id).Result?.Url??string.Empty,
                         // ✅ التأكد إذا كانت السؤال مرتبط بالامتحان
                         IsSelected = examQuestionIds.Contains(question.Id),
                         QuestionAnswers = question.QuestionAnswers.Select(qa => new ExamQuestionAnswerDto
