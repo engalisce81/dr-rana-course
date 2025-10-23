@@ -13,6 +13,7 @@ using Volo.Abp.Users;
 using Volo.Abp.Identity;
 using static Dev.Acadmy.Permissions.AcadmyPermissions;
 using Dev.Acadmy.Lectures;
+using Dev.Acadmy.MediaItems;
 
 namespace Dev.Acadmy.Quizzes
 {
@@ -27,8 +28,10 @@ namespace Dev.Acadmy.Quizzes
         private readonly IRepository<Lecture, Guid> _lectureRepository;
         private readonly IRepository<QuizStudentAnswer, Guid> _quizStudentAnswerRepository;
         private readonly IRepository<LectureTry, Guid> _lectureTryRepository;
-        public QuizManager(IRepository<LectureTry, Guid> lectureTryRepository, IRepository<QuizStudentAnswer, Guid> quizStudentAnswerRepository, IRepository<Lecture, Guid> lectureRepository, IRepository<LectureStudent, Guid> lectureStudentRepository, IIdentityUserRepository userRepository, ICurrentUser currentUser, IRepository<QuizStudent> quizStudentRepository, IMapper mapper, IRepository<Quiz,Guid> quizRepository)
+        private readonly MediaItemManager _mediaitemManager;
+        public QuizManager(MediaItemManager mediaitemManager, IRepository<LectureTry, Guid> lectureTryRepository, IRepository<QuizStudentAnswer, Guid> quizStudentAnswerRepository, IRepository<Lecture, Guid> lectureRepository, IRepository<LectureStudent, Guid> lectureStudentRepository, IIdentityUserRepository userRepository, ICurrentUser currentUser, IRepository<QuizStudent> quizStudentRepository, IMapper mapper, IRepository<Quiz,Guid> quizRepository)
         {
+            _mediaitemManager = mediaitemManager;   
             _lectureTryRepository = lectureTryRepository;
             _quizStudentAnswerRepository = quizStudentAnswerRepository;
             _lectureRepository = lectureRepository;
@@ -97,135 +100,7 @@ namespace Dev.Acadmy.Quizzes
             return new ResponseApi<bool> { Data = true, Success = true, Message = "delete succeess" };
         }
 
-        //public async Task<ResponseApi<QuizResultDto>> SubmitQuizAsync(QuizAnswerDto input)
-        //{
-        //    var userId = _currentUser.GetId();
-
-        //    var quiz = await (await _quizRepository.GetQueryableAsync())
-        //        .Include(q => q.Questions)
-        //            .ThenInclude(q => q.QuestionAnswers)
-        //        .Include(q => q.Questions)
-        //            .ThenInclude(q => q.QuestionType)
-        //        .Include(x => x.Lecture)
-        //        .FirstOrDefaultAsync(q => q.Id == input.QuizId);
-
-        //    if (quiz == null)
-        //        throw new UserFriendlyException("Quiz not found");
-
-        //    // ✅ تحقق إذا كان المستخدم حل الكويز مسبقًا
-        //    var alreadyAnswered = await _quizStudentRepository.FirstOrDefaultAsync(
-        //        x => x.UserId == userId && x.QuizId == input.QuizId
-        //    );
-
-        //    if (alreadyAnswered != null)
-        //        throw new UserFriendlyException("You have already submitted this quiz. You cannot attempt it again.");
-
-        //    double totalScore = 0;
-        //    double studentScore = 0;
-
-        //    // ✅ إنشاء سجل الطالب في الكويز
-        //    var quizStudent = new QuizStudent
-        //    {
-        //        LectureId = quiz.LectureId,
-        //        UserId = userId,
-        //        QuizId = quiz.Id,
-        //        Score = 0
-        //    };
-
-        //    // ✅ احفظ الكائن أولاً حتى يتولد له Id
-        //    await _quizStudentRepository.InsertAsync(quizStudent, autoSave: true);
-
-        //    // ✅ لف على الأسئلة
-        //    foreach (var question in quiz.Questions)
-        //    {
-        //        var studentAnswer = input.Answers.FirstOrDefault(a => a.QuestionId == question.Id);
-        //        if (studentAnswer == null)
-        //            continue;
-
-        //        bool isCorrect = false;
-        //        double obtained = 0;
-
-        //        switch ((QuestionTypeEnum)question.QuestionType.Key)
-        //        {
-        //            case QuestionTypeEnum.MCQ:
-        //            case QuestionTypeEnum.TrueOrFalse:
-        //                if (studentAnswer.SelectedAnswerId != null)
-        //                {
-        //                    var correctAnswer = question.QuestionAnswers.FirstOrDefault(a => a.IsCorrect);
-        //                    if (correctAnswer != null && correctAnswer.Id == studentAnswer.SelectedAnswerId)
-        //                    {
-        //                        isCorrect = true;
-        //                        obtained = question.Score;
-        //                        studentScore += question.Score;
-        //                    }
-        //                }
-        //                break;
-
-        //            case QuestionTypeEnum.ShortAnswer:
-        //                if (!string.IsNullOrWhiteSpace(studentAnswer.TextAnswer))
-        //                {
-        //                    var keywords = question.QuestionAnswers.Select(a => a.Answer.ToLower()).ToList();
-        //                    var studentText = studentAnswer.TextAnswer.ToLower();
-
-        //                    int matched = keywords.Count(k => studentText.Contains(k));
-        //                    if (matched > 0)
-        //                    {
-        //                        double ratio = (double)matched / keywords.Count;
-        //                        obtained = question.Score * ratio;
-        //                        studentScore += obtained;
-        //                        isCorrect = ratio >= 0.8; // ✅ اعتبرها صحيحة لو التشابه ≥ 80%
-        //                    }
-        //                }
-        //                break;
-
-        //            case QuestionTypeEnum.CompleteAnswer:
-        //                if (!string.IsNullOrWhiteSpace(studentAnswer.TextAnswer))
-        //                {
-        //                    var correctAnswer = question.QuestionAnswers.FirstOrDefault(a => a.IsCorrect);
-        //                    if (correctAnswer != null &&
-        //                        string.Equals(studentAnswer.TextAnswer.Trim(), correctAnswer.Answer.Trim(), StringComparison.OrdinalIgnoreCase))
-        //                    {
-        //                        obtained = question.Score;
-        //                        studentScore += question.Score;
-        //                        isCorrect = true;
-        //                    }
-        //                }
-        //                break;
-        //        }
-
-        //        totalScore += question.Score;
-
-        //        // ✅ إنشاء الإجابة الخاصة بالطالب
-        //        var answerEntity = new QuizStudentAnswer
-        //        {
-        //            QuizStudentId = quizStudent.Id,
-        //            QuestionId = question.Id,
-        //            SelectedAnswerId = studentAnswer.SelectedAnswerId,
-        //            TextAnswer = studentAnswer.TextAnswer,
-        //            IsCorrect = isCorrect,
-        //            ScoreObtained = obtained
-        //        };
-
-        //        await _quizStudentAnswerRepository.InsertAsync(answerEntity, autoSave: true);
-        //    }
-
-        //    // ✅ تحديث الدرجة النهائية للطالب بعد إدخال الإجابات
-        //    quizStudent.Score = (int)Math.Round(studentScore);
-        //    await _quizStudentRepository.UpdateAsync(quizStudent, autoSave: true);
-
-        //    // ✅ إرجاع النتيجة للمستخدم
-        //    return new ResponseApi<QuizResultDto>
-        //    {
-        //        Data = new QuizResultDto
-        //        {
-        //            QuizId = quiz.Id,
-        //            TotalScore = totalScore,
-        //            StudentScore = studentScore
-        //        },
-        //        Success = true,
-        //        Message = "Quiz submitted and corrected successfully"
-        //    };
-        //}
+       
 
 
         public async Task<ResponseApi<LectureQuizResultDto>> GetLectureQuizResultsAsync(Guid lectureId)
@@ -276,7 +151,8 @@ namespace Dev.Acadmy.Quizzes
                         QuestionId = question.Id,
                         QuestionText = question.Title,
                         ScoreObtained = studentAnswer?.ScoreObtained ?? 0,
-                        ScoreTotal = question.Score
+                        ScoreTotal = question.Score,
+                        LogoUrl = _mediaitemManager.GetAsync(question.Id).Result?.Url?? string.Empty
                     };
                     var selectAnswer = quizStudents.Where(x => x.QuizId == quiz.Id).Select(x=>x.Answers).FirstOrDefault();
                     // نضيف كل الإجابات الخاصة بالسؤال

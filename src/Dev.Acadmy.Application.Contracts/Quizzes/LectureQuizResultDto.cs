@@ -28,6 +28,7 @@ namespace Dev.Acadmy.Quizzes
         public string QuestionText { get; set; }
         public double ScoreObtained { get; set; }
         public double ScoreTotal { get; set; }
+        public string LogoUrl {  get; set; }    
         public List<AnswerResultDto> Answers { get; set; } = new();
     }
 
