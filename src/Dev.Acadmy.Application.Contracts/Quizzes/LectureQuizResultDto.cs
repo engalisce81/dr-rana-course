@@ -35,6 +35,7 @@ namespace Dev.Acadmy.Quizzes
     {
         public Guid AnswerId { get; set; }
         public string AnswerText { get; set; }
+        public string SelectText { get; set; }
         public bool IsCorrect { get; set; }
         public bool IsSelected { get; set; }
     }

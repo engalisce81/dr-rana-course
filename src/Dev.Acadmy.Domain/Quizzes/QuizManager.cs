@@ -278,7 +278,7 @@ namespace Dev.Acadmy.Quizzes
                         ScoreObtained = studentAnswer?.ScoreObtained ?? 0,
                         ScoreTotal = question.Score
                     };
-
+                    var selectAnswer = quizStudents.Where(x => x.QuizId == quiz.Id).Select(x=>x.Answers).FirstOrDefault();
                     // نضيف كل الإجابات الخاصة بالسؤال
                     foreach (var answer in question.QuestionAnswers)
                     {
@@ -286,6 +286,7 @@ namespace Dev.Acadmy.Quizzes
                         {
                             AnswerId = answer.Id,
                             AnswerText = answer.Answer,
+                            SelectText = selectAnswer?.Where(x => x.QuestionId ==question.Id)?.Select(x=>x.TextAnswer)?.FirstOrDefault()?? string.Empty,
                             IsCorrect = answer.IsCorrect,
                             IsSelected = studentAnswer?.SelectedAnswerId == answer.Id
                         });
