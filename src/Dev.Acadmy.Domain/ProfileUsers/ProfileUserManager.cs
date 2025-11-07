@@ -43,7 +43,7 @@ namespace Dev.Acadmy.ProfileUsers
         {
             var userInfo = await GetUserDataAsync();
             var currentUser = await _userRepository.GetAsync(_currentUser.GetId());
-            if (deviceIp.Trim().ToLower() != currentUser.GetProperty<string>(SetPropConsts.StudentMobileIP).Trim().ToLower()) { throw new UserFriendlyException("this devicee not owner this email"); }
+            if(currentUser.GetProperty<string>(SetPropConsts.StudentMobileIP) != string.Empty) if (deviceIp.Trim().ToLower() != currentUser.GetProperty<string>(SetPropConsts.StudentMobileIP).Trim().ToLower() ) { throw new UserFriendlyException("this devicee not owner this email"); }
             return new ResponseApi<UserInfoDto> { Data = userInfo, Success = true, Message = "get user info success" };
         }
 

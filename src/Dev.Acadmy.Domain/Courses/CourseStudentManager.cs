@@ -21,6 +21,7 @@ namespace Dev.Acadmy.Courses
 {
     public class CourseStudentManager :DomainService
     {
+        private readonly IRepository<Course, Guid> _courseRepository;
         private readonly IRepository<CourseStudent> _coursestudentRepository;
         private readonly IMapper _mapper;
         private readonly IIdentityUserRepository _userRepository;
@@ -28,8 +29,9 @@ namespace Dev.Acadmy.Courses
         private readonly MediaItemManager _mediaItemManager;
         private readonly IRepository<QuizStudent ,Guid> _quizStudentRepository;
         private readonly IRepository<LectureTry, Guid> _lectureTryRepository;
-        public CourseStudentManager(IRepository<LectureTry, Guid> lectureTryRepository, IRepository<QuizStudent, Guid> quizStudentRepository, MediaItemManager mediaItemManager, ICurrentUser currentUser, IIdentityUserRepository userRepository, IMapper mapper, IRepository<CourseStudent> coursestudentRepository)
+        public CourseStudentManager(IRepository<Course, Guid> courseRepository, IRepository<LectureTry, Guid> lectureTryRepository, IRepository<QuizStudent, Guid> quizStudentRepository, MediaItemManager mediaItemManager, ICurrentUser currentUser, IIdentityUserRepository userRepository, IMapper mapper, IRepository<CourseStudent> coursestudentRepository)
         {
+            _courseRepository = courseRepository;
             _lectureTryRepository = lectureTryRepository;
             _quizStudentRepository = quizStudentRepository;
             _mediaItemManager = mediaItemManager;
@@ -51,6 +53,60 @@ namespace Dev.Acadmy.Courses
             dto.Email = user.Email;
             return new ResponseApi<CourseStudentDto> { Data = dto, Success = true, Message = "find succeess" };
         }
+
+        public async Task AssignStudentToCourses(CreateUpdateStudentCoursesDto input)
+        {
+            if (input == null) return;
+            foreach (var courseId in input.CourseIds)
+            {
+                var exists = await _coursestudentRepository.FirstOrDefaultAsync(x => x.CourseId == courseId && x.UserId == input.UserId);
+                if (exists == null)
+                {
+                    var courseStudent = new CourseStudent
+                    {
+                        CourseId = courseId,
+                        UserId = input.UserId,
+                        IsSubscibe = true
+                    };
+                    await _coursestudentRepository.InsertAsync(courseStudent);
+                }
+            }
+        }
+
+
+        public async Task<PagedResultDto<CourseLookupDto>> GetListCoursesToAssginToStudentAsync(string? search,int pageNumber,int pageSize,Guid userId)
+        {
+            // كل الكورسات
+            var queryable = await _courseRepository.GetQueryableAsync();
+
+            if (!string.IsNullOrWhiteSpace(search))
+                queryable = queryable.Where(c => c.Name.Contains(search));
+
+            var totalCount = await queryable.CountAsync();
+
+            // IDs الكورسات اللي الطالب مشترك فيها
+            var subscribedCourseIds = await(await _coursestudentRepository.GetQueryableAsync())
+                .Where(cs => cs.UserId == userId && cs.IsSubscibe)
+                .Select(cs => cs.CourseId)
+                .ToListAsync();
+
+            // نجيب الصفحة المطلوبة
+            var courses = await queryable
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // نعمل الماب لـ DTO
+            var courseLookupDtos = courses.Select(c => new CourseLookupDto
+            {
+                CourseId = c.Id,
+                Name = c.Name,
+                IsSelect = subscribedCourseIds.Contains(c.Id)
+            }).ToList();
+
+            return new PagedResultDto<CourseLookupDto>(totalCount, courseLookupDtos);
+        }
+
 
         public async Task<PagedResultDto<CourseStudentDto>> GetListAsync(int pageNumber, int pageSize,bool isSubscribe,Guid courseId ,string? search )
         {

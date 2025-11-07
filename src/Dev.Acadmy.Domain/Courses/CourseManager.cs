@@ -155,13 +155,13 @@ namespace Dev.Acadmy.Courses
         }
 
         public async Task<PagedResultDto<CourseInfoHomeDto>> GetCoursesInfoListAsync(
-    int pageNumber,
-    int pageSize,
-    string? search,
-    bool alreadyJoin,
-    Guid collegeId,
-    Guid? subjectId,
-    Guid? gradelevelId)
+            int pageNumber,
+            int pageSize,
+            string? search,
+            bool alreadyJoin,
+            Guid collegeId,
+            Guid? subjectId,
+            Guid? gradelevelId)
         {
             var currentUser = await _userRepository.GetAsync(_currentUser.GetId());
             var termId = currentUser.GetProperty<Guid?>(SetPropConsts.TermId);

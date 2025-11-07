@@ -14,6 +14,8 @@ using Volo.Abp;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Identity;
 using Volo.Abp.Data;
+using Dev.Acadmy.Courses;
+using Microsoft.EntityFrameworkCore;
 
 namespace Dev.Acadmy.Students
 {
@@ -28,8 +30,10 @@ namespace Dev.Acadmy.Students
         private readonly IRepository<University, Guid> _universityRepository;
         private readonly IRepository<GradeLevel, Guid> _gradeLevelRepository;
         private readonly IRepository<Term, Guid> _termRepository;
-        public StudentManager(IRepository<Term, Guid> termRepository, IRepository<GradeLevel, Guid> gradeLevelRepository, IRepository<University, Guid> universityRepository, IRepository<College, Guid> collegeRepository, IRepository<Subject, Guid> subjectRepository, IIdentityRoleRepository roleRepository, IIdentityUserRepository userRepository, IRepository<AccountType, Guid> accountTypeRepository, IdentityUserManager userManager)
+        private readonly IRepository<CourseStudent, Guid> _courseStudentRepository;
+        public StudentManager(IRepository<CourseStudent, Guid> courseStudentRepository, IRepository<Term, Guid> termRepository, IRepository<GradeLevel, Guid> gradeLevelRepository, IRepository<University, Guid> universityRepository, IRepository<College, Guid> collegeRepository, IRepository<Subject, Guid> subjectRepository, IIdentityRoleRepository roleRepository, IIdentityUserRepository userRepository, IRepository<AccountType, Guid> accountTypeRepository, IdentityUserManager userManager)
         {
+            _courseStudentRepository = courseStudentRepository;
             _termRepository = termRepository;
             _gradeLevelRepository = gradeLevelRepository;
             _universityRepository = universityRepository;
@@ -202,9 +206,9 @@ namespace Dev.Acadmy.Students
         }
 
         public async Task<PagedResultDto<StudentDto>> GetStudentListAsync(
-     int pageNumber = 1,
-     int pageSize = 10,
-     string? search = null)
+         int pageNumber = 1,
+         int pageSize = 10,
+         string? search = null)
         {
             // 🟢 1. جلب جميع المستخدمين من المستودع
             var users = await _userRepository.GetListAsync();
@@ -221,6 +225,7 @@ namespace Dev.Acadmy.Students
                 var accountType = await _accountTypeRepository.FindAsync(accountTypeId.Value);
                 if (accountType == null || accountType.Key != (int)AccountTypeKey.Student)
                     continue;
+                var courses = await (await _courseStudentRepository.GetQueryableAsync()).Where(x => x.UserId == user.Id && x.IsSubscibe).Include(x => x.Course).Select(x => x.Course.Name).ToListAsync();
 
                 // 🟢 بناء الـ DTO
                 var dto = new StudentDto
@@ -233,7 +238,9 @@ namespace Dev.Acadmy.Students
                     UniversityId = user.GetProperty<Guid>(SetPropConsts.UniversityId),
                     Gender = user.GetProperty<bool>(SetPropConsts.Gender),
                     GradeLevelId = user.GetProperty<Guid?>(SetPropConsts.GradeLevelId),
-                    StudentMobileIP = user.GetProperty<string>(SetPropConsts.StudentMobileIP)
+                    StudentMobileIP = user.GetProperty<string>(SetPropConsts.StudentMobileIP),
+                    PhoneNumber = user.GetProperty<string>(SetPropConsts.PhoneNumber),
+                    CoursesName = courses
                 };
 
                 resultList.Add(dto);

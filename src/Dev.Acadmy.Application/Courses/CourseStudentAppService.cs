@@ -34,6 +34,8 @@ namespace Dev.Acadmy.Courses
         public async Task<PagedResultDto<CourseStudentDto>> GetListStudentsAsync(int pageNumber, int pageSize, bool isSubscribe, string? search) => await _coursestudentManager.GetListStudentAsync (pageNumber, pageSize, isSubscribe, search);
         [Authorize(AcadmyPermissions.CourseStudents.Delete)]
         public async Task DeleteAllStudentInAllCourses() => await _coursestudentManager.DeleteAllStudentInAllCourses();
-
-    }
+        [Authorize]
+        public async Task AssignStudentToCourses(CreateUpdateStudentCoursesDto input) => await _coursestudentManager.AssignStudentToCourses(input);
+        [Authorize]
+        public async Task<PagedResultDto<CourseLookupDto>> GetListCoursesToAssginToStudentAsync(string? search, int pageNumber, int pageSize, Guid userId) => await _coursestudentManager.GetListCoursesToAssginToStudentAsync(search, pageNumber, pageSize, userId);    }
 }
