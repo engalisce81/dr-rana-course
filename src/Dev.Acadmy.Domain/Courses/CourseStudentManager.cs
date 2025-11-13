@@ -29,7 +29,7 @@ namespace Dev.Acadmy.Courses
         private readonly MediaItemManager _mediaItemManager;
         private readonly IRepository<QuizStudent ,Guid> _quizStudentRepository;
         private readonly IRepository<LectureTry, Guid> _lectureTryRepository;
-        public CourseStudentManager(IRepository<Course, Guid> courseRepository, IRepository<LectureTry, Guid> lectureTryRepository, IRepository<QuizStudent, Guid> quizStudentRepository, MediaItemManager mediaItemManager, ICurrentUser currentUser, IIdentityUserRepository userRepository, IMapper mapper, IRepository<CourseStudent> coursestudentRepository)
+        public CourseStudentManager(CourseManager courseManager, IRepository<Course, Guid> courseRepository, IRepository<LectureTry, Guid> lectureTryRepository, IRepository<QuizStudent, Guid> quizStudentRepository, MediaItemManager mediaItemManager, ICurrentUser currentUser, IIdentityUserRepository userRepository, IMapper mapper, IRepository<CourseStudent> coursestudentRepository)
         {
             _courseRepository = courseRepository;
             _lectureTryRepository = lectureTryRepository;
@@ -57,19 +57,17 @@ namespace Dev.Acadmy.Courses
         public async Task AssignStudentToCourses(CreateUpdateStudentCoursesDto input)
         {
             if (input == null) return;
+            var coursessStudent = await (await _coursestudentRepository.GetQueryableAsync()).Where(x=>x.UserId == input.UserId).ToListAsync();
+            await _coursestudentRepository.DeleteManyAsync(coursessStudent);
             foreach (var courseId in input.CourseIds)
             {
-                var exists = await _coursestudentRepository.FirstOrDefaultAsync(x => x.CourseId == courseId && x.UserId == input.UserId);
-                if (exists == null)
+                var courseStudent = new CourseStudent
                 {
-                    var courseStudent = new CourseStudent
-                    {
-                        CourseId = courseId,
-                        UserId = input.UserId,
-                        IsSubscibe = true
-                    };
-                    await _coursestudentRepository.InsertAsync(courseStudent);
-                }
+                    CourseId = courseId,
+                    UserId = input.UserId,
+                    IsSubscibe = true
+                };
+                await _coursestudentRepository.InsertAsync(courseStudent);   
             }
         }
 
