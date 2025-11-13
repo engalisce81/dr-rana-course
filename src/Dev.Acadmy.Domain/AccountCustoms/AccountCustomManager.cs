@@ -62,16 +62,6 @@ namespace Dev.Acadmy.AccountCustoms
         public async Task<ResponseApi<LookupDto>> RegisterAsync(RegistercustomDto input)
         {
             await CheckEntity(input);
-            var users = await _userRepository.GetListAsync();
-            var isDeviceAlreadyRegistered = users.Any(x =>
-                !string.IsNullOrWhiteSpace(x.GetProperty<string>(SetPropConsts.StudentMobileIP)) &&
-                x.GetProperty<string>(SetPropConsts.StudentMobileIP).Trim().ToLower() == input.StudentMobileIP.Trim().ToLower()
-            );
-
-            if (isDeviceAlreadyRegistered)
-            {
-                throw new UserFriendlyException("This device is already registered with another account.");
-            }
             if (await _userRepository.FindByNormalizedEmailAsync(input.UserName.ToUpper()) != null) throw new UserFriendlyException("The Email or User Name Already Exist");
             var user = new IdentityUser(Guid.NewGuid(), input.UserName, input.UserName);
             var accountType = await _accountTypeRepository.FirstOrDefaultAsync(x=>x.Key == input.AccountTypeKey);   
@@ -123,7 +113,7 @@ namespace Dev.Acadmy.AccountCustoms
         {
             var university = await _universityRepository.GetAsync(input.UniversityId);
             var college = await _collegeRepository.GetAsync(input.CollegeId);
-            if(input.GradeLevelId !=null)  await _gradeLevelRepository.GetAsync((Guid)input.GradeLevelId);
+            if(input.GradeLevelId !=null )  await _gradeLevelRepository.GetAsync((Guid)input.GradeLevelId);
         }
 
 
