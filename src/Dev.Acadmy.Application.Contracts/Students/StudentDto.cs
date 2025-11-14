@@ -17,6 +17,7 @@ namespace Dev.Acadmy.Students
         public Guid? GradeLevelId { get; set; }
         public int AccountTypeKey { get; set; }
         public string? StudentMobileIP { get; set; }
+        public string LogoUrl { get; set; }
         public ICollection<string> CoursesName { get; set; }=new List<string>();
     }
 }

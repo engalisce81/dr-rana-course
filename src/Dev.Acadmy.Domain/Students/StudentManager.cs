@@ -16,6 +16,7 @@ using Volo.Abp.Identity;
 using Volo.Abp.Data;
 using Dev.Acadmy.Courses;
 using Microsoft.EntityFrameworkCore;
+using Dev.Acadmy.MediaItems;
 
 namespace Dev.Acadmy.Students
 {
@@ -31,8 +32,10 @@ namespace Dev.Acadmy.Students
         private readonly IRepository<GradeLevel, Guid> _gradeLevelRepository;
         private readonly IRepository<Term, Guid> _termRepository;
         private readonly IRepository<CourseStudent, Guid> _courseStudentRepository;
-        public StudentManager(IRepository<CourseStudent, Guid> courseStudentRepository, IRepository<Term, Guid> termRepository, IRepository<GradeLevel, Guid> gradeLevelRepository, IRepository<University, Guid> universityRepository, IRepository<College, Guid> collegeRepository, IRepository<Subject, Guid> subjectRepository, IIdentityRoleRepository roleRepository, IIdentityUserRepository userRepository, IRepository<AccountType, Guid> accountTypeRepository, IdentityUserManager userManager)
+        private readonly MediaItemManager _mediaItemManager;
+        public StudentManager(MediaItemManager mediaItemManager, IRepository<CourseStudent, Guid> courseStudentRepository, IRepository<Term, Guid> termRepository, IRepository<GradeLevel, Guid> gradeLevelRepository, IRepository<University, Guid> universityRepository, IRepository<College, Guid> collegeRepository, IRepository<Subject, Guid> subjectRepository, IIdentityRoleRepository roleRepository, IIdentityUserRepository userRepository, IRepository<AccountType, Guid> accountTypeRepository, IdentityUserManager userManager)
         {
+            _mediaItemManager = mediaItemManager;
             _courseStudentRepository = courseStudentRepository;
             _termRepository = termRepository;
             _gradeLevelRepository = gradeLevelRepository;
@@ -240,7 +243,8 @@ namespace Dev.Acadmy.Students
                     GradeLevelId = user.GetProperty<Guid?>(SetPropConsts.GradeLevelId),
                     StudentMobileIP = user.GetProperty<string>(SetPropConsts.StudentMobileIP),
                     PhoneNumber = user.GetProperty<string>(SetPropConsts.PhoneNumber),
-                    CoursesName = courses
+                    CoursesName = courses,
+                    LogoUrl = (_mediaItemManager.GetAsync(user.Id).Result)?.Url ?? UserConsts.DefaultImg
                 };
 
                 resultList.Add(dto);

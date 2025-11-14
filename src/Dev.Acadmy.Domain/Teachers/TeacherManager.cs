@@ -14,6 +14,7 @@ using Volo.Abp;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Identity;
 using Volo.Abp.Data;
+using Dev.Acadmy.MediaItems;
 
 namespace Dev.Acadmy.Teachers
 {
@@ -28,8 +29,11 @@ namespace Dev.Acadmy.Teachers
         private readonly IRepository<University, Guid> _universityRepository;
         private readonly IRepository<GradeLevel, Guid> _gradeLevelRepository;
         private readonly IRepository<Term, Guid> _termRepository;
-        public TeacherManager(IRepository<Term, Guid> termRepository, IRepository<GradeLevel, Guid> gradeLevelRepository, IRepository<University, Guid> universityRepository, IRepository<College, Guid> collegeRepository, IRepository<Subject, Guid> subjectRepository, IIdentityRoleRepository roleRepository, IIdentityUserRepository userRepository, IRepository<AccountType, Guid> accountTypeRepository, IdentityUserManager userManager)
+        private readonly MediaItemManager _mediaItemManager;
+
+        public TeacherManager(MediaItemManager mediaItemManager, IRepository<Term, Guid> termRepository, IRepository<GradeLevel, Guid> gradeLevelRepository, IRepository<University, Guid> universityRepository, IRepository<College, Guid> collegeRepository, IRepository<Subject, Guid> subjectRepository, IIdentityRoleRepository roleRepository, IIdentityUserRepository userRepository, IRepository<AccountType, Guid> accountTypeRepository, IdentityUserManager userManager)
         {
+            _mediaItemManager = mediaItemManager;
             _termRepository = termRepository;
             _gradeLevelRepository = gradeLevelRepository;
             _universityRepository = universityRepository;
@@ -190,9 +194,9 @@ namespace Dev.Acadmy.Teachers
         }
 
         public async Task<PagedResultDto<TeacherDto>> GetTeacherListAsync(
-     int pageNumber = 1,
-     int pageSize = 10,
-     string? search = null)
+         int pageNumber = 1,
+         int pageSize = 10,
+         string? search = null)
         {
             // 🟢 1. جلب جميع المستخدمين من المستودع
             var users = await _userRepository.GetListAsync();
@@ -220,10 +224,9 @@ namespace Dev.Acadmy.Teachers
                     CollegeId = user.GetProperty<Guid>(SetPropConsts.CollegeId),
                     UniversityId = user.GetProperty<Guid>(SetPropConsts.UniversityId),
                     Gender = user.GetProperty<bool>(SetPropConsts.Gender),
-                    PhoneNumber = user.GetProperty<string>(SetPropConsts.PhoneNumber)
-
+                    PhoneNumber = user.GetProperty<string>(SetPropConsts.PhoneNumber),
+                    LogoUrl = (_mediaItemManager.GetAsync(user.Id).Result)?.Url ?? UserConsts.DefaultImg
                 };
-
                 resultList.Add(dto);
             }
 
