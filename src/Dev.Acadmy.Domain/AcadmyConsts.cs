@@ -22,6 +22,10 @@ public static class SetPropConsts
 
 }
 
+public static class UserConsts
+{
+    public const string DefaultImg = "https://i.postimg.cc/SN8rk6M1/download.png";
+}
 public static class RoleConsts
 {
     public const string Student = "Student";

@@ -15,6 +15,7 @@ using static Dev.Acadmy.Permissions.AcadmyPermissions;
 using static Volo.Abp.Identity.Settings.IdentitySettingNames;
 using Dev.Acadmy.Quizzes;
 using Dev.Acadmy.Lectures;
+using Volo.Abp.Data;
 
 
 namespace Dev.Acadmy.Courses
@@ -142,8 +143,9 @@ namespace Dev.Acadmy.Courses
                 var user = await _userRepository.GetAsync(dto.UserId);
                 dto.Name = user.Name;
                 var medaiItem = await _mediaItemManager.GetAsync(user.Id);
-                dto.LogoUrl = medaiItem?.Url ?? "";
+                dto.LogoUrl = medaiItem?.Url ?? UserConsts.DefaultImg;
                 dto.Email = user.Email;
+                dto.PhoneNumber = user.GetProperty<string?>(SetPropConsts.PhoneNumber)?? string.Empty;
             }
             return new PagedResultDto<CourseStudentDto>(totalCount, coursestudentDtos);
         }

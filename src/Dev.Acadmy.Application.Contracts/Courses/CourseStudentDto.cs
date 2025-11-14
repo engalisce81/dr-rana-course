@@ -18,5 +18,6 @@ namespace Dev.Acadmy.Courses
         public Guid CourseId { get; set; }
         public string CourseName { get; set; }
         public bool IsSubscibe { get; set; }
+        public string? PhoneNumber { get; set; }
     }
 }

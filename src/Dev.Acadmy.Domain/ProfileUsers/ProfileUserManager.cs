@@ -1,5 +1,7 @@
 ﻿using Dev.Acadmy.AccountTypes;
+using Dev.Acadmy.Chapters;
 using Dev.Acadmy.Courses;
+using Dev.Acadmy.Lectures;
 using Dev.Acadmy.MediaItems;
 using Dev.Acadmy.Response;
 using Dev.Acadmy.Universites;
@@ -25,10 +27,16 @@ namespace Dev.Acadmy.ProfileUsers
         private readonly IRepository<University, Guid> _universityRepository;
         private readonly IRepository<GradeLevel, Guid> _gradeLevelRepository;
         private readonly IRepository<Term, Guid> _termRepository;
-        private readonly IRepository<CourseStudent, Guid> _courseStudent;
-        public ProfileUserManager(IRepository<CourseStudent, Guid> courseStudent, IRepository<Term, Guid> termRepository, IRepository<GradeLevel, Guid> gradeLevelRepository, IRepository<University, Guid> universityRepository, IRepository<College, Guid> collegeRepository, IRepository<AccountType, Guid> accountTypeRepository, MediaItemManager mediaItemManager, ICurrentUser currentUser, IIdentityUserRepository userRepository) 
+        private readonly IRepository<CourseStudent, Guid> _courseStudentRepository;
+        private readonly IRepository<Courses.Course,Guid> _courseRepository;
+        private readonly IRepository<Lecture ,Guid> _lectureRepository;
+        private readonly IRepository<Chapter,Guid> _chapterRepository;
+        public ProfileUserManager(IRepository<Chapter, Guid> chapterRepository, IRepository<Lecture, Guid> lectureRepository, IRepository<Courses.Course, Guid> courseRepository, IRepository<CourseStudent, Guid> courseStudentRepository, IRepository<Term, Guid> termRepository, IRepository<GradeLevel, Guid> gradeLevelRepository, IRepository<University, Guid> universityRepository, IRepository<College, Guid> collegeRepository, IRepository<AccountType, Guid> accountTypeRepository, MediaItemManager mediaItemManager, ICurrentUser currentUser, IIdentityUserRepository userRepository) 
         {
-            _courseStudent = courseStudent;
+            _chapterRepository = chapterRepository;
+            _lectureRepository = lectureRepository;
+            _courseRepository = courseRepository;
+            _courseStudentRepository = courseStudentRepository;
             _termRepository = termRepository;
             _gradeLevelRepository = gradeLevelRepository;
             _universityRepository = universityRepository;
@@ -85,7 +93,7 @@ namespace Dev.Acadmy.ProfileUsers
             var accountType = await _accountTypeRepository.FirstOrDefaultAsync(x=>x.Id ==accountTypeId);
             var university = await _universityRepository.FirstOrDefaultAsync(x => x.Id == universityId);
             var gradeLevel = await _gradeLevelRepository.FirstOrDefaultAsync(x => x.Id == gradeLevelId);
-            var courseJoinCount = await _courseStudent.CountAsync(x=>x.UserId == currentUser.Id && x.IsSubscibe);
+            var courseJoinCount = await _courseStudentRepository.CountAsync(x=>x.UserId == currentUser.Id && x.IsSubscibe);
             var userInfo = new UserInfoDto
             {
                 Id = currentUser.Id,
@@ -102,6 +110,39 @@ namespace Dev.Acadmy.ProfileUsers
                 UniversityId = university?.Id ?? null,
                 UniversityName = university?.Name ?? string.Empty,
                 CourseJoinCount = courseJoinCount
+            };
+            return userInfo;
+        }
+
+        public async Task<UserInfoDto> GetTeacherProfileAsync()
+        {
+            var currentUser = await _userRepository.GetAsync(_currentUser.GetId());
+            var media = await _mediaItemManager.GetAsync(currentUser.Id);
+            var collegeId = currentUser.GetProperty<Guid>(SetPropConsts.CollegeId);
+            var accountTypeId = currentUser.GetProperty<Guid>(SetPropConsts.AccountTypeId);
+            var universityId = currentUser.GetProperty<Guid>(SetPropConsts.UniversityId);
+            var college = await _collegeRepository.FirstOrDefaultAsync(x => x.Id == collegeId);
+            var accountType = await _accountTypeRepository.FirstOrDefaultAsync(x => x.Id == accountTypeId);
+            var university = await _universityRepository.FirstOrDefaultAsync(x => x.Id == universityId);
+            var courseCount = await _courseRepository.CountAsync(x => x.UserId == currentUser.Id );
+            var chapterCount = await _chapterRepository.CountAsync(x=>x.CreatorId ==currentUser.Id);
+            var lectureCount = await _lectureRepository.CountAsync(x => x.CreatorId == currentUser.Id);
+            var userInfo = new UserInfoDto
+            {
+                Id = currentUser.Id,
+                UserName = currentUser.UserName,
+                Name = currentUser.Name,
+                ProfilePictureUrl = media?.Url ?? UserConsts.DefaultImg,
+                CollegeId = college?.Id ?? null,
+                CollegeName = college?.Name ?? string.Empty,
+                AccountTypeId = accountType?.Id ?? null,
+                AccountTypeKey = accountType?.Key.ToString() ?? string.Empty,
+                AccountTypeName = accountType?.Name ?? string.Empty,
+                UniversityId = university?.Id ?? null,
+                UniversityName = university?.Name ?? string.Empty,
+                CourseJoinCount = courseCount,
+                ChapterCount = chapterCount,
+                LectureCount = lectureCount
             };
             return userInfo;
         }

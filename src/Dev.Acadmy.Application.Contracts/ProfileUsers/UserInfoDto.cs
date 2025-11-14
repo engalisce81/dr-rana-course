@@ -27,5 +27,7 @@ namespace Dev.Acadmy.ProfileUsers
         public Guid? AccountTypeId { get; set; }
         public string AccountTypeKey { get; set; }
         public string AccountTypeName { get; set; }
+        public int LectureCount { get; set; }
+        public int ChapterCount { get; set; }
     }
 }
