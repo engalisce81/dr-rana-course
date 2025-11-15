@@ -58,7 +58,6 @@ namespace Dev.Acadmy.Questions
         {
             var questionbank = _mapper.Map<QuestionBank>(input);
             var result = await _questionbankRepository.InsertAsync(questionbank,autoSave:true);
-           // await  _examRepositroy.InsertAsync( new Exam { Course = input.CourseId ,Name = input.Name+" Exam" ,IsActive=false ,TimeExam = 0 } ,autoSave:true);
             var dto = _mapper.Map<QuestionBankDto>(result);
             return new ResponseApi<QuestionBankDto> { Data = dto, Success = true, Message = "save succeess" };
         }

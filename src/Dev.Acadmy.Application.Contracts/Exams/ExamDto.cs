@@ -14,6 +14,7 @@ namespace Dev.Acadmy.Exams
         public int Score { get; set; }
         public bool IsActive { get; set; }
         public Guid CourseId { get; set; }
+        public string CourseName { get; set; }
         // public ICollection<ExamQuestions> ExamQuestions { get; set; } = new List<ExamQuestions>();
     }
 }

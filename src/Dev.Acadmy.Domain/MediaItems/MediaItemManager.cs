@@ -33,7 +33,7 @@ namespace Dev.Acadmy.MediaItems
         public async Task<MediaItem> CreateAsync(CreateUpdateMediaItemDto input)
         {
             var mediaItem = _mapper.Map<MediaItem>(input);
-            var result = await _mediaItemRepository.InsertAsync(mediaItem);
+            var result = await _mediaItemRepository.InsertAsync(mediaItem ,autoSave:true);
             return result;
         }
 

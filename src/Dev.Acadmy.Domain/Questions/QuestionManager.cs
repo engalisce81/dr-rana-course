@@ -69,7 +69,8 @@ namespace Dev.Acadmy.Questions
         public async Task<ResponseApi<QuestionDto>> CreateAsync(CreateUpdateQuestionDto input)
         {
             var Question = _mapper.Map<Question>(input);
-            var result = await _questionRepository.InsertAsync(Question);
+            Question.QuizId = input.QuizId;  // ⭐ مهم جداً
+            var result = await _questionRepository.InsertAsync(Question,autoSave:true);
             var mediaItem =  await _mediaItemManager.CreateAsync(new CreateUpdateMediaItemDto{RefId = result.Id,Url = input.LogoUrl,IsImage=true});
             foreach (var questionAnswer in input.Answers)
             {

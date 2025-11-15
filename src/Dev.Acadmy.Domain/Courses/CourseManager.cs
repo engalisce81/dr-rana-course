@@ -41,8 +41,14 @@ namespace Dev.Acadmy.Courses
         private readonly IRepository<Chapter, Guid> _chapterRepository;
         private readonly IRepository<LectureTry, Guid> _lectureTryRepository;
         private readonly IRepository<Lecture, Guid> _lectureRepository;
-        public CourseManager(IRepository<Lecture, Guid> lectureRepository, IRepository<LectureTry, Guid> lectureTryRepository, IRepository<Chapter, Guid> chapterRepository,IRepository<QuizStudent, Guid> quizStudentRepository, QuestionManager questionManager, QuizManager quizManger, LectureManager lectureManager, CourseInfoManager courseInfoManager, ChapterManager chapterManager, IRepository<CourseStudent, Guid> courseStudentRepository, QuestionBankManager questionBankManager, IIdentityUserRepository userRepository, MediaItemManager mediaItemManager, ICurrentUser currentUser, IRepository<Course> courseRepository , IMapper mapper) 
+        private readonly ExamManager _examManager;
+        private readonly IRepository<Exam ,Guid> _examRepository;
+        private readonly IRepository<QuestionBank, Guid> _questionBankRepository;
+        public CourseManager(  IRepository<QuestionBank, Guid> questionBankRepository, IRepository<Exam ,Guid> examRepository, ExamManager examManager, IRepository<Lecture, Guid> lectureRepository, IRepository<LectureTry, Guid> lectureTryRepository, IRepository<Chapter, Guid> chapterRepository,IRepository<QuizStudent, Guid> quizStudentRepository, QuestionManager questionManager, QuizManager quizManger, LectureManager lectureManager, CourseInfoManager courseInfoManager, ChapterManager chapterManager, IRepository<CourseStudent, Guid> courseStudentRepository, QuestionBankManager questionBankManager, IIdentityUserRepository userRepository, MediaItemManager mediaItemManager, ICurrentUser currentUser, IRepository<Course> courseRepository , IMapper mapper) 
         {
+            _questionBankRepository = questionBankRepository;
+            _examRepository = examRepository;
+            _examManager = examManager;
             _lectureRepository = lectureRepository;
             _lectureTryRepository = lectureTryRepository;
             _chapterRepository = chapterRepository;
@@ -526,6 +532,7 @@ namespace Dev.Acadmy.Courses
                     .ThenInclude(ch => ch.Lectures)
                         .ThenInclude(l => l.Quizzes)
                             .ThenInclude(q => q.Questions)
+                            .Include(x=>x.CourseInfos)
                 .FirstOrDefaultAsync(x => x.Id == courseId);
 
             if (course == null)
@@ -549,13 +556,15 @@ namespace Dev.Acadmy.Courses
                 PdfUrl= course.PdfUrl,
                 IntroductionVideoUrl= course.IntroductionVideoUrl,
             };
-            await _courseRepository.InsertAsync(newCourse, autoSave: true);
-            await _mediaItemManager.CreateAsync(new CreateUpdateMediaItemDto { Url = (await _mediaItemManager.GetAsync(course.Id))?.Url ?? "", RefId = newCourse.Id, IsImage = true });
-           // await _questionBankManager.CreateAsync(new CreateUpdateQuestionBankDto { CreatorId = newCourse.UserId, CourseId = newCourse.Id, Name = $"{newCourse.Name} Question Bank (Copy)" });
+            var resultCourse = await _courseRepository.InsertAsync(newCourse, autoSave: true);
+            await _mediaItemManager.CreateAsync(new CreateUpdateMediaItemDto { Url = ( _mediaItemManager.GetAsync(course.Id).Result)?.Url ?? "", RefId = resultCourse.Id, IsImage = true });
+            var bankStatic = await _questionBankManager.CreateAsync(new CreateUpdateQuestionBankDto { Name = resultCourse.Name + "Question Bank", CourseId = resultCourse.Id });
+
+            // await _questionBankManager.CreateAsync(new CreateUpdateQuestionBankDto { CreatorId = newCourse.UserId, CourseId = newCourse.Id, Name = $"{newCourse.Name} Question Bank (Copy)" });
             // انسخ CourseInfos
             foreach (var info in course.CourseInfos)
             {
-                await _courseInfoManager.CreateAsync(new CreateUpdateCourseInfoDto { Name = info.Name, CourseId = newCourse.Id });
+                await _courseInfoManager.CreateAsync(new CreateUpdateCourseInfoDto { Name = info.Name, CourseId = resultCourse.Id });
             }
 
 
@@ -565,7 +574,7 @@ namespace Dev.Acadmy.Courses
                 var newChapter = new CreateUpdateChapterDto
                 {
                     Name = chapter.Name,
-                    CourseId = newCourse.Id
+                    CourseId = resultCourse.Id
                 };
                 var chapterDto = await _chapterManager.CreateAsync(newChapter);
 
@@ -581,6 +590,8 @@ namespace Dev.Acadmy.Courses
                         IsVisible = lecture.IsVisible,
                         QuizTryCount = lecture.QuizTryCount
                     };
+                    var lecPdfs =( await _mediaItemManager.GetListAsync(lecture.Id)).Select(x=>x.Url).ToList();
+                    newLecture.PdfUrls = lecPdfs;
                     var lecDto  = await _lectureManager.CreateAsync(newLecture);
 
                     // 🟢 5. نسخ الكويزات (Quizzes)
@@ -593,30 +604,38 @@ namespace Dev.Acadmy.Courses
                             QuizTime = quiz.QuizTime,
                             QuizTryCount = quiz.QuizTryCount,
                             LectureId = lecDto.Data.Id
+                            
                         };
                         var quizDto = await _quizManger.CreateAsync(newQuiz);
-
                         // 🟢 6. نسخ الأسئلة (Questions)
                         foreach (var question in quiz.Questions)
                         {
+                            
                             var newQuestion = new CreateUpdateQuestionDto
                             {
                                 Title = question.Title,
                                 QuizId = quizDto.Data.Id,
                                 QuestionTypeId = question.QuestionTypeId,
-                                QuestionBankId = question.QuestionBankId,
+                                QuestionBankId = bankStatic.Data.Id,
                                 Answers = question.QuestionAnswers.Select(a => new CreateUpdateQuestionAnswerDto
                                 {
                                     Answer = a.Answer,
+                                    
                                     IsCorrect = a.IsCorrect,
                                 }).ToList(),
+                                
                                 Score=question.Score
                             };
+                            var questionMediaItem = await _mediaItemManager.GetAsync(question.Id);
+                            newQuestion.LogoUrl = questionMediaItem?.Url ?? "";
                             await _questionManager.CreateAsync(newQuestion);
                         }
                     }
                 }
             }
+
+
+
 
             return newCourse.Id;
         }

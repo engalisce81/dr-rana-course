@@ -53,7 +53,7 @@ namespace Dev.Acadmy.Questions
         public async Task<ResponseApi<QuestionAnswerDto>> CreateAsync(CreateUpdateQuestionAnswerDto input)
         {
             var QuestionAnswer = _mapper.Map<QuestionAnswer>(input);
-            var result = await _QuestionAnswerRepository.InsertAsync(QuestionAnswer);
+            var result = await _QuestionAnswerRepository.InsertAsync(QuestionAnswer,autoSave:true);
             var dto = _mapper.Map<QuestionAnswerDto>(result);
             return new ResponseApi<QuestionAnswerDto> { Data = dto, Success = true, Message = "save succeess" };
         }

@@ -11,5 +11,6 @@ namespace Dev.Acadmy.Questions
     {
         public string Name { get; set; }
         public Guid CourseId { get; set; }
+        public string CourseName { get; set; }
     }
 }
