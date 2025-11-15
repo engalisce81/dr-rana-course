@@ -75,7 +75,7 @@ namespace Dev.Acadmy.AccountCustoms
 
             if (accountType.Key == (int)AccountTypeKey.Student)
             {
-                string phone = input.PhoneNumber.Substring(2);
+                string phone = input.PhoneNumber;
                 user.SetProperty(SetPropConsts.PhoneNumber, phone);
                 user.SetProperty(SetPropConsts.GradeLevelId, input.GradeLevelId);
                 user.SetProperty(SetPropConsts.StudentMobileIP, input.StudentMobileIP);
